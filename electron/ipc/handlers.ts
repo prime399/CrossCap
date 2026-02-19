@@ -3,7 +3,7 @@ import path from "node:path";
 import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, screen, shell } from "electron";
 import { RECORDINGS_DIR } from "../main";
 
-const PROJECT_FILE_EXTENSION = "openscreen";
+const PROJECT_FILE_EXTENSION = "crosscap";
 const CURSOR_TELEMETRY_VERSION = 1;
 const CURSOR_SAMPLE_INTERVAL_MS = 100;
 const MAX_CURSOR_SAMPLES = 60 * 60 * 10; // 1 hour @ 10Hz
@@ -345,10 +345,10 @@ export function registerIpcHandlers(
 					: `${safeName}.${PROJECT_FILE_EXTENSION}`;
 
 				const result = await dialog.showSaveDialog({
-					title: "Save OpenScreen Project",
+					title: "Save CrossCap Project",
 					defaultPath: path.join(RECORDINGS_DIR, defaultName),
 					filters: [
-						{ name: "OpenScreen Project", extensions: [PROJECT_FILE_EXTENSION] },
+						{ name: "CrossCap Project", extensions: [PROJECT_FILE_EXTENSION] },
 						{ name: "JSON", extensions: ["json"] },
 					],
 					properties: ["createDirectory", "showOverwriteConfirmation"],
@@ -383,10 +383,10 @@ export function registerIpcHandlers(
 	ipcMain.handle("load-project-file", async () => {
 		try {
 			const result = await dialog.showOpenDialog({
-				title: "Open OpenScreen Project",
+				title: "Open CrossCap Project",
 				defaultPath: RECORDINGS_DIR,
 				filters: [
-					{ name: "OpenScreen Project", extensions: [PROJECT_FILE_EXTENSION] },
+					{ name: "CrossCap Project", extensions: [PROJECT_FILE_EXTENSION] },
 					{ name: "JSON", extensions: ["json"] },
 					{ name: "All Files", extensions: ["*"] },
 				],

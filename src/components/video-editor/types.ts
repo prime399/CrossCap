@@ -235,4 +235,4 @@ export const DEFAULT_VIDEO_EDITOR_SETTINGS: VideoEditorSettings = {
 	ui: DEFAULT_VIDEO_EDITOR_UI,
 };
 
-export const SETTINGS_STORAGE_KEY = "openscreen_video_editor_settings";
+export const SETTINGS_STORAGE_KEY = "crosscap_video_editor_settings";

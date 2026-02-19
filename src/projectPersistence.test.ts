@@ -69,15 +69,15 @@ describe("project save/load handlers", () => {
 
 		(fs.writeFile as unknown as Mock).mockResolvedValue(undefined);
 
-		const result = await saveHandler({}, projectData, "project-name", "/tmp/current.openscreen");
+		const result = await saveHandler({}, projectData, "project-name", "/tmp/current.crosscap");
 
 		expect(dialog.showSaveDialog).not.toHaveBeenCalled();
 		expect(fs.writeFile).toHaveBeenCalledWith(
-			"/tmp/current.openscreen",
+			"/tmp/current.crosscap",
 			JSON.stringify(projectData, null, 2),
 			"utf-8",
 		);
-		expect(result).toMatchObject({ success: true, path: "/tmp/current.openscreen" });
+		expect(result).toMatchObject({ success: true, path: "/tmp/current.crosscap" });
 	});
 
 	it("uses save dialog when no existing project path is provided", async () => {
@@ -86,7 +86,7 @@ describe("project save/load handlers", () => {
 
 		(dialog.showSaveDialog as unknown as Mock).mockResolvedValue({
 			canceled: false,
-			filePath: "/tmp/new.openscreen",
+			filePath: "/tmp/new.crosscap",
 		});
 		(fs.writeFile as unknown as Mock).mockResolvedValue(undefined);
 
@@ -94,11 +94,11 @@ describe("project save/load handlers", () => {
 
 		expect(dialog.showSaveDialog).toHaveBeenCalled();
 		expect(fs.writeFile).toHaveBeenCalledWith(
-			"/tmp/new.openscreen",
+			"/tmp/new.crosscap",
 			JSON.stringify(projectData, null, 2),
 			"utf-8",
 		);
-		expect(result).toMatchObject({ success: true, path: "/tmp/new.openscreen" });
+		expect(result).toMatchObject({ success: true, path: "/tmp/new.crosscap" });
 	});
 
 	it("loads project JSON payload from selected file", async () => {
@@ -107,17 +107,17 @@ describe("project save/load handlers", () => {
 
 		(dialog.showOpenDialog as unknown as Mock).mockResolvedValue({
 			canceled: false,
-			filePaths: ["/tmp/example.openscreen"],
+			filePaths: ["/tmp/example.crosscap"],
 		});
 		(fs.readFile as unknown as Mock).mockResolvedValue(serialized);
 
 		const result = await loadHandler({});
 
 		expect(dialog.showOpenDialog).toHaveBeenCalled();
-		expect(fs.readFile).toHaveBeenCalledWith("/tmp/example.openscreen", "utf-8");
+		expect(fs.readFile).toHaveBeenCalledWith("/tmp/example.crosscap", "utf-8");
 		expect(result).toMatchObject({
 			success: true,
-			path: "/tmp/example.openscreen",
+			path: "/tmp/example.crosscap",
 			project: { version: 1, videoPath: "/tmp/video.webm" },
 		});
 	});

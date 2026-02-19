@@ -46,7 +46,7 @@ let tray: Tray | null = null;
 let selectedSourceName = "";
 
 // Tray Icons
-const defaultTrayIcon = getTrayIcon("openscreen.png");
+const defaultTrayIcon = getTrayIcon("crosscap.png");
 const recordingTrayIcon = getTrayIcon("rec-button.png");
 
 function createWindow() {
@@ -164,7 +164,7 @@ function getTrayIcon(filename: string) {
 function updateTrayMenu(recording: boolean = false) {
 	if (!tray) return;
 	const trayIcon = recording ? recordingTrayIcon : defaultTrayIcon;
-	const trayToolTip = recording ? `Recording: ${selectedSourceName}` : "OpenScreen";
+	const trayToolTip = recording ? `Recording: ${selectedSourceName}` : "CrossCap";
 	const menuTemplate = recording
 		? [
 				{
