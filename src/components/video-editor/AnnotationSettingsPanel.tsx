@@ -127,7 +127,7 @@ export function AnnotationSettingsPanel({
 	};
 
 	return (
-		<div className="flex-[2] min-w-0 bg-[#09090b] border border-white/5 rounded-2xl p-4 flex flex-col shadow-xl h-full overflow-y-auto custom-scrollbar">
+		<div className="flex-[2] min-w-0 bg-[#09090b]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col shadow-2xl shadow-black/50 h-full overflow-y-auto custom-scrollbar">
 			<div className="mb-6">
 				<div className="flex items-center justify-between mb-4">
 					<span className="text-sm font-medium text-slate-200">Annotation Settings</span>
@@ -142,24 +142,24 @@ export function AnnotationSettingsPanel({
 					onValueChange={(value) => onTypeChange(value as AnnotationType)}
 					className="mb-6"
 				>
-					<TabsList className="mb-4 bg-white/5 border border-white/5 p-1 w-full grid grid-cols-3 h-auto rounded-xl">
+					<TabsList className="mb-4 w-full grid grid-cols-3 h-auto rounded-xl p-1">
 						<TabsTrigger
 							value="text"
-							className="data-[state=active]:bg-[#34B27B] data-[state=active]:text-white text-slate-400 py-2 rounded-lg transition-all gap-2"
+							className="py-2 rounded-lg gap-2"
 						>
 							<Type className="w-4 h-4" />
 							Text
 						</TabsTrigger>
 						<TabsTrigger
 							value="image"
-							className="data-[state=active]:bg-[#34B27B] data-[state=active]:text-white text-slate-400 py-2 rounded-lg transition-all gap-2"
+							className="py-2 rounded-lg gap-2"
 						>
 							<ImageIcon className="w-4 h-4" />
 							Image
 						</TabsTrigger>
 						<TabsTrigger
 							value="figure"
-							className="data-[state=active]:bg-[#34B27B] data-[state=active]:text-white text-slate-400 py-2 rounded-lg transition-all gap-2"
+							className="py-2 rounded-lg gap-2"
 						>
 							<svg
 								className="w-4 h-4"

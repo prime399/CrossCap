@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ipcMain, desktopCapturer, shell, app, dialog, screen, BrowserWindow, nativeImage, Tray, Menu } from "electron";
-const PROJECT_FILE_EXTENSION = "openscreen";
+const PROJECT_FILE_EXTENSION = "crosscap";
 const CURSOR_TELEMETRY_VERSION = 1;
 const CURSOR_SAMPLE_INTERVAL_MS = 100;
 const MAX_CURSOR_SAMPLES = 60 * 60 * 10;
@@ -269,10 +269,10 @@ function registerIpcHandlers(createEditorWindow2, createSourceSelectorWindow2, g
         const safeName = (suggestedName || `project-${Date.now()}`).replace(/[^a-zA-Z0-9-_]/g, "_");
         const defaultName = safeName.endsWith(`.${PROJECT_FILE_EXTENSION}`) ? safeName : `${safeName}.${PROJECT_FILE_EXTENSION}`;
         const result = await dialog.showSaveDialog({
-          title: "Save OpenScreen Project",
+          title: "Save CrossCap Project",
           defaultPath: path.join(RECORDINGS_DIR, defaultName),
           filters: [
-            { name: "OpenScreen Project", extensions: [PROJECT_FILE_EXTENSION] },
+            { name: "CrossCap Project", extensions: [PROJECT_FILE_EXTENSION] },
             { name: "JSON", extensions: ["json"] }
           ],
           properties: ["createDirectory", "showOverwriteConfirmation"]
@@ -303,10 +303,10 @@ function registerIpcHandlers(createEditorWindow2, createSourceSelectorWindow2, g
   ipcMain.handle("load-project-file", async () => {
     try {
       const result = await dialog.showOpenDialog({
-        title: "Open OpenScreen Project",
+        title: "Open CrossCap Project",
         defaultPath: RECORDINGS_DIR,
         filters: [
-          { name: "OpenScreen Project", extensions: [PROJECT_FILE_EXTENSION] },
+          { name: "CrossCap Project", extensions: [PROJECT_FILE_EXTENSION] },
           { name: "JSON", extensions: ["json"] },
           { name: "All Files", extensions: ["*"] }
         ],
@@ -419,7 +419,7 @@ function createEditorWindow() {
     resizable: true,
     alwaysOnTop: false,
     skipTaskbar: false,
-    title: "OpenScreen",
+    title: "CrossCap",
     backgroundColor: "#000000",
     webPreferences: {
       preload: path.join(__dirname$1, "preload.mjs"),
@@ -491,7 +491,7 @@ let mainWindow = null;
 let sourceSelectorWindow = null;
 let tray = null;
 let selectedSourceName = "";
-const defaultTrayIcon = getTrayIcon("openscreen.png");
+const defaultTrayIcon = getTrayIcon("crosscap.png");
 const recordingTrayIcon = getTrayIcon("rec-button.png");
 function createWindow() {
   mainWindow = createHudOverlayWindow();
@@ -594,7 +594,7 @@ function getTrayIcon(filename) {
 function updateTrayMenu(recording = false) {
   if (!tray) return;
   const trayIcon = recording ? recordingTrayIcon : defaultTrayIcon;
-  const trayToolTip = recording ? `Recording: ${selectedSourceName}` : "OpenScreen";
+  const trayToolTip = recording ? `Recording: ${selectedSourceName}` : "CrossCap";
   const menuTemplate = recording ? [
     {
       label: "Stop Recording",

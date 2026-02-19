@@ -1485,90 +1485,157 @@ export default function VideoEditor() {
 				<div className="flex-1" />
 			</div>
 
-			<div className="flex-1 p-5 gap-4 flex min-h-0 relative">
-				{/* Left Column - Video & Timeline */}
-				<div className="flex-[7] flex flex-col gap-3 min-w-0 h-full">
-					<PanelGroup direction="vertical" className="gap-3">
-						{/* Top section: video preview and controls */}
-						<Panel defaultSize={70} minSize={40}>
-							<div className="w-full h-full flex flex-col items-center justify-center bg-black/40 rounded-2xl border border-white/5 shadow-2xl overflow-hidden">
-								{/* Video preview */}
-								<div
-									className="w-full flex justify-center items-center"
-									style={{ flex: "1 1 auto", margin: "6px 0 0" }}
-								>
+			<div className="flex-1 flex flex-col min-h-0">
+				<PanelGroup direction="vertical">
+					{/* Top section: video preview with floating settings */}
+					<Panel defaultSize={65} minSize={35}>
+						<div className="h-full px-5 pt-5 pb-2">
+							<div className="relative w-full h-full">
+								{/* Video preview area */}
+								<div className="w-full h-full flex flex-col items-center justify-center bg-black/40 rounded-2xl border border-white/5 shadow-2xl overflow-hidden pr-[300px]">
+									{/* Video preview */}
 									<div
-										className="relative"
+										className="w-full flex justify-center items-center"
+										style={{ flex: "1 1 auto", margin: "6px 0 0" }}
+									>
+										<div
+											className="relative"
+											style={{
+												width: "auto",
+												height: "100%",
+												aspectRatio: getAspectRatioValue(aspectRatio),
+												maxWidth: "100%",
+												margin: "0 auto",
+												boxSizing: "border-box",
+												transform: "scale(1.08) translateX(-2%)",
+												transformOrigin: "center center",
+											}}
+										>
+											<VideoPlayback
+												key={videoPath || "no-video"}
+												aspectRatio={aspectRatio}
+												ref={videoPlaybackRef}
+												videoPath={videoPath || ""}
+												onDurationChange={setDuration}
+												onTimeUpdate={setCurrentTime}
+												currentTime={currentTime}
+												onPlayStateChange={setIsPlaying}
+												onError={setError}
+												wallpaper={wallpaper}
+												zoomRegions={zoomRegions}
+												selectedZoomId={selectedZoomId}
+												onSelectZoom={handleSelectZoom}
+												onZoomFocusChange={handleZoomFocusChange}
+												isPlaying={isPlaying}
+												showShadow={shadowIntensity > 0}
+												shadowIntensity={shadowIntensity}
+												showBlur={showBlur}
+												motionBlurEnabled={motionBlurEnabled}
+												borderRadius={borderRadius}
+												padding={padding}
+												cropRegion={cropRegion}
+												trimRegions={trimRegions}
+												annotationRegions={annotationRegions}
+												selectedAnnotationId={selectedAnnotationId}
+												onSelectAnnotation={handleSelectAnnotation}
+												onAnnotationPositionChange={handleAnnotationPositionChange}
+												onAnnotationSizeChange={handleAnnotationSizeChange}
+											/>
+										</div>
+									</div>
+									{/* Playback controls */}
+									<div
+										className="w-full flex justify-center items-center"
 										style={{
-											width: "auto",
-											height: "100%",
-											aspectRatio: getAspectRatioValue(aspectRatio),
-											maxWidth: "100%",
-											margin: "0 auto",
-											boxSizing: "border-box",
+											height: "48px",
+											flexShrink: 0,
+											padding: "6px 12px",
+											margin: "6px 0 6px 0",
 										}}
 									>
-										<VideoPlayback
-											key={videoPath || "no-video"}
-											aspectRatio={aspectRatio}
-											ref={videoPlaybackRef}
-											videoPath={videoPath || ""}
-											onDurationChange={setDuration}
-											onTimeUpdate={setCurrentTime}
-											currentTime={currentTime}
-											onPlayStateChange={setIsPlaying}
-											onError={setError}
-											wallpaper={wallpaper}
-											zoomRegions={zoomRegions}
-											selectedZoomId={selectedZoomId}
-											onSelectZoom={handleSelectZoom}
-											onZoomFocusChange={handleZoomFocusChange}
-											isPlaying={isPlaying}
-											showShadow={shadowIntensity > 0}
-											shadowIntensity={shadowIntensity}
-											showBlur={showBlur}
-											motionBlurEnabled={motionBlurEnabled}
-											borderRadius={borderRadius}
-											padding={padding}
-											cropRegion={cropRegion}
-											trimRegions={trimRegions}
-											annotationRegions={annotationRegions}
-											selectedAnnotationId={selectedAnnotationId}
-											onSelectAnnotation={handleSelectAnnotation}
-											onAnnotationPositionChange={handleAnnotationPositionChange}
-											onAnnotationSizeChange={handleAnnotationSizeChange}
-										/>
+										<div style={{ width: "100%", maxWidth: "700px" }}>
+											<PlaybackControls
+												isPlaying={isPlaying}
+												currentTime={currentTime}
+												duration={duration}
+												onTogglePlayPause={togglePlayPause}
+												onSeek={handleSeek}
+											/>
+										</div>
 									</div>
 								</div>
-								{/* Playback controls */}
-								<div
-									className="w-full flex justify-center items-center"
-									style={{
-										height: "48px",
-										flexShrink: 0,
-										padding: "6px 12px",
-										margin: "6px 0 6px 0",
-									}}
-								>
-									<div style={{ width: "100%", maxWidth: "700px" }}>
-										<PlaybackControls
-											isPlaying={isPlaying}
-											currentTime={currentTime}
-											duration={duration}
-											onTogglePlayPause={togglePlayPause}
-											onSeek={handleSeek}
-										/>
-									</div>
+
+								{/* Floating settings panel */}
+								<div className="absolute top-3 right-3 z-30 w-[310px] max-h-[calc(100%-24px)]">
+									<SettingsPanel
+										selected={wallpaper}
+										onWallpaperChange={setWallpaper}
+										selectedZoomDepth={
+											selectedZoomId ? zoomRegions.find((z) => z.id === selectedZoomId)?.depth : null
+										}
+										onZoomDepthChange={(depth) => selectedZoomId && handleZoomDepthChange(depth)}
+										selectedZoomId={selectedZoomId}
+										onZoomDelete={handleZoomDelete}
+										selectedTrimId={selectedTrimId}
+										onTrimDelete={handleTrimDelete}
+										shadowIntensity={shadowIntensity}
+										onShadowChange={setShadowIntensity}
+										showBlur={showBlur}
+										onBlurChange={setShowBlur}
+										motionBlurEnabled={motionBlurEnabled}
+										onMotionBlurChange={setMotionBlurEnabled}
+										borderRadius={borderRadius}
+										onBorderRadiusChange={setBorderRadius}
+										padding={padding}
+										onPaddingChange={setPadding}
+										cropRegion={cropRegion}
+										onCropChange={setCropRegion}
+										aspectRatio={aspectRatio}
+										videoElement={videoPlaybackRef.current?.video || null}
+										exportQuality={exportQuality}
+										onExportQualityChange={setExportQuality}
+										exportFormat={exportFormat}
+										onExportFormatChange={setExportFormat}
+										gifFrameRate={gifFrameRate}
+										onGifFrameRateChange={setGifFrameRate}
+										gifLoop={gifLoop}
+										onGifLoopChange={setGifLoop}
+										gifSizePreset={gifSizePreset}
+										onGifSizePresetChange={setGifSizePreset}
+										gifOutputDimensions={calculateOutputDimensions(
+											videoPlaybackRef.current?.video?.videoWidth || 1920,
+											videoPlaybackRef.current?.video?.videoHeight || 1080,
+											gifSizePreset,
+											GIF_SIZE_PRESETS,
+										)}
+										onExport={handleOpenExportDialog}
+										selectedAnnotationId={selectedAnnotationId}
+										annotationRegions={annotationRegions}
+										onAnnotationContentChange={handleAnnotationContentChange}
+										onAnnotationTypeChange={handleAnnotationTypeChange}
+										onAnnotationStyleChange={handleAnnotationStyleChange}
+										onAnnotationFigureDataChange={handleAnnotationFigureDataChange}
+										onAnnotationDelete={handleAnnotationDelete}
+										onSaveProject={handleSaveProject}
+										onLoadProject={handleLoadProject}
+										customImages={settings.background.customImages}
+										onCustomImageAdd={addCustomImage}
+										onCustomImageRemove={removeCustomImage}
+										activeBackgroundTab={activeBackgroundTab}
+										onActiveBackgroundTabChange={setActiveBackgroundTab}
+									/>
 								</div>
 							</div>
-						</Panel>
+						</div>
+					</Panel>
 
-						<PanelResizeHandle className="h-3 bg-[#09090b]/80 hover:bg-[#09090b] transition-colors rounded-full mx-4 flex items-center justify-center">
-							<div className="w-8 h-1 bg-white/20 rounded-full"></div>
-						</PanelResizeHandle>
+					<PanelResizeHandle className="h-2 flex items-center justify-center">
+						<div className="w-10 h-1 bg-white/10 rounded-full hover:bg-white/20 transition-colors"></div>
+					</PanelResizeHandle>
 
-						{/* Timeline section */}
-						<Panel defaultSize={30} minSize={20}>
+					{/* Timeline section - full width */}
+					<Panel defaultSize={35} minSize={20}>
+						<div className="h-full px-5 pb-4">
 							<div className="h-full bg-[#09090b] rounded-2xl border border-white/5 shadow-lg overflow-hidden flex flex-col">
 								<TimelineEditor
 									videoDuration={duration}
@@ -1598,68 +1665,9 @@ export default function VideoEditor() {
 									onAspectRatioChange={setAspectRatio}
 								/>
 							</div>
-						</Panel>
-					</PanelGroup>
-				</div>
-
-				{/* Right section: settings panel */}
-				<SettingsPanel
-					selected={wallpaper}
-					onWallpaperChange={setWallpaper}
-					selectedZoomDepth={
-						selectedZoomId ? zoomRegions.find((z) => z.id === selectedZoomId)?.depth : null
-					}
-					onZoomDepthChange={(depth) => selectedZoomId && handleZoomDepthChange(depth)}
-					selectedZoomId={selectedZoomId}
-					onZoomDelete={handleZoomDelete}
-					selectedTrimId={selectedTrimId}
-					onTrimDelete={handleTrimDelete}
-					shadowIntensity={shadowIntensity}
-					onShadowChange={setShadowIntensity}
-					showBlur={showBlur}
-					onBlurChange={setShowBlur}
-					motionBlurEnabled={motionBlurEnabled}
-					onMotionBlurChange={setMotionBlurEnabled}
-					borderRadius={borderRadius}
-					onBorderRadiusChange={setBorderRadius}
-					padding={padding}
-					onPaddingChange={setPadding}
-					cropRegion={cropRegion}
-					onCropChange={setCropRegion}
-					aspectRatio={aspectRatio}
-					videoElement={videoPlaybackRef.current?.video || null}
-					exportQuality={exportQuality}
-					onExportQualityChange={setExportQuality}
-					exportFormat={exportFormat}
-					onExportFormatChange={setExportFormat}
-					gifFrameRate={gifFrameRate}
-					onGifFrameRateChange={setGifFrameRate}
-					gifLoop={gifLoop}
-					onGifLoopChange={setGifLoop}
-					gifSizePreset={gifSizePreset}
-					onGifSizePresetChange={setGifSizePreset}
-					gifOutputDimensions={calculateOutputDimensions(
-						videoPlaybackRef.current?.video?.videoWidth || 1920,
-						videoPlaybackRef.current?.video?.videoHeight || 1080,
-						gifSizePreset,
-						GIF_SIZE_PRESETS,
-					)}
-					onExport={handleOpenExportDialog}
-					selectedAnnotationId={selectedAnnotationId}
-					annotationRegions={annotationRegions}
-					onAnnotationContentChange={handleAnnotationContentChange}
-					onAnnotationTypeChange={handleAnnotationTypeChange}
-					onAnnotationStyleChange={handleAnnotationStyleChange}
-					onAnnotationFigureDataChange={handleAnnotationFigureDataChange}
-					onAnnotationDelete={handleAnnotationDelete}
-					onSaveProject={handleSaveProject}
-					onLoadProject={handleLoadProject}
-					customImages={settings.background.customImages}
-					onCustomImageAdd={addCustomImage}
-					onCustomImageRemove={removeCustomImage}
-					activeBackgroundTab={activeBackgroundTab}
-					onActiveBackgroundTabChange={setActiveBackgroundTab}
-				/>
+						</div>
+					</Panel>
+				</PanelGroup>
 			</div>
 
 			<Toaster theme="dark" className="pointer-events-auto" />
