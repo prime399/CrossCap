@@ -116,7 +116,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: false
-          generate_release_notes: true
+          body_path: .github/RELEASE_TEMPLATE.md
           files: |
             artifacts/windows-installer/**/*.exe
             artifacts/macos-installer/**/*.dmg
