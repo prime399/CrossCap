@@ -90,6 +90,11 @@ interface SettingsPanelProps {
   onAnnotationStyleChange?: (id: string, style: Partial<AnnotationRegion['style']>) => void;
   onAnnotationFigureDataChange?: (id: string, figureData: any) => void;
   onAnnotationDelete?: (id: string) => void;
+  customImages?: string[];
+  onCustomImageAdd?: (imageUrl: string) => void;
+  onCustomImageRemove?: (imageUrl: string) => void;
+  activeBackgroundTab?: 'image' | 'color' | 'gradient';
+  onActiveBackgroundTabChange?: (tab: 'image' | 'color' | 'gradient') => void;
 }
 
 export default SettingsPanel;
@@ -145,9 +150,13 @@ export function SettingsPanel({
   onAnnotationStyleChange,
   onAnnotationFigureDataChange,
   onAnnotationDelete,
+  customImages = [],
+  onCustomImageAdd,
+  onCustomImageRemove,
+  activeBackgroundTab = 'image',
+  onActiveBackgroundTabChange,
 }: SettingsPanelProps) {
   const [wallpaperPaths, setWallpaperPaths] = useState<string[]>([]);
-  const [customImages, setCustomImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -208,7 +217,7 @@ export function SettingsPanel({
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
       if (dataUrl) {
-        setCustomImages(prev => [...prev, dataUrl]);
+        onCustomImageAdd?.(dataUrl);
         onWallpaperChange(dataUrl);
         toast.success('Custom image uploaded successfully!');
       }
@@ -227,7 +236,7 @@ export function SettingsPanel({
 
   const handleRemoveCustomImage = (imageUrl: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    setCustomImages(prev => prev.filter(img => img !== imageUrl));
+    onCustomImageRemove?.(imageUrl);
     // If the removed image was selected, clear selection
     if (selected === imageUrl) {
       onWallpaperChange(wallpaperPaths[0] || WALLPAPER_RELATIVE[0]);
@@ -413,7 +422,7 @@ export function SettingsPanel({
               </div>
             </AccordionTrigger>
             <AccordionContent className="pb-3">
-              <Tabs defaultValue="image" className="w-full">
+              <Tabs value={activeBackgroundTab} onValueChange={(value) => onActiveBackgroundTabChange?.(value as 'image' | 'color' | 'gradient')} className="w-full">
                 <TabsList className="mb-2 bg-white/5 border border-white/5 p-0.5 w-full grid grid-cols-3 h-7 rounded-lg">
                   <TabsTrigger value="image" className="data-[state=active]:bg-[#34B27B] data-[state=active]:text-white text-slate-400 text-[10px] py-1 rounded-md transition-all">Image</TabsTrigger>
                   <TabsTrigger value="color" className="data-[state=active]:bg-[#34B27B] data-[state=active]:text-white text-slate-400 text-[10px] py-1 rounded-md transition-all">Color</TabsTrigger>

@@ -1,3 +1,5 @@
+import type { ExportQuality, ExportFormat, GifFrameRate, GifSizePreset } from '@/lib/exporter';
+
 export type ZoomDepth = 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface ZoomFocus {
@@ -130,3 +132,95 @@ function clamp(value: number, min: number, max: number) {
   if (Number.isNaN(value)) return (min + max) / 2;
   return Math.min(max, Math.max(min, value));
 }
+
+export interface VideoEditorEffects {
+  motionBlurEnabled: boolean;
+  blurBgEnabled: boolean;
+  shadowIntensity: number;
+  borderRadius: number;
+  padding: number;
+}
+
+export interface VideoEditorBackground {
+  type: 'image' | 'color' | 'gradient';
+  value: string;
+  customImages: string[];
+  selectedColor: string;
+  selectedGradient: string;
+}
+
+export interface VideoEditorExport {
+  format: ExportFormat;
+  quality: ExportQuality;
+  gifFrameRate: GifFrameRate;
+  gifLoop: boolean;
+  gifSizePreset: GifSizePreset;
+}
+
+export interface VideoEditorRegions {
+  zoomRegions: ZoomRegion[];
+  trimRegions: TrimRegion[];
+  cropRegion: CropRegion;
+}
+
+export interface VideoEditorUI {
+  activeAccordionItems: string[];
+  activeBackgroundTab: 'image' | 'color' | 'gradient';
+}
+
+export interface VideoEditorSettings {
+  version: number;
+  lastUpdated: string;
+  effects: VideoEditorEffects;
+  background: VideoEditorBackground;
+  export: VideoEditorExport;
+  regions: VideoEditorRegions;
+  ui: VideoEditorUI;
+}
+
+export const DEFAULT_VIDEO_EDITOR_EFFECTS: VideoEditorEffects = {
+  motionBlurEnabled: false,
+  blurBgEnabled: false,
+  shadowIntensity: 0,
+  borderRadius: 0,
+  padding: 50,
+};
+
+export const DEFAULT_VIDEO_EDITOR_BACKGROUND: VideoEditorBackground = {
+  type: 'image',
+  value: 'wallpapers/wallpaper1.jpg',
+  customImages: [],
+  selectedColor: '#ADADAD',
+  selectedGradient: 'linear-gradient(111.6deg, rgba(114,167,232,1) 9.4%, rgba(253,129,82,1) 43.9%)',
+};
+
+export const DEFAULT_VIDEO_EDITOR_EXPORT: VideoEditorExport = {
+  format: 'mp4',
+  quality: 'good',
+  gifFrameRate: 15,
+  gifLoop: true,
+  gifSizePreset: 'medium',
+};
+
+export const DEFAULT_VIDEO_EDITOR_REGIONS: VideoEditorRegions = {
+  zoomRegions: [],
+  trimRegions: [],
+  cropRegion: DEFAULT_CROP_REGION,
+};
+
+export const DEFAULT_VIDEO_EDITOR_UI: VideoEditorUI = {
+  activeAccordionItems: ['effects', 'background'],
+  activeBackgroundTab: 'image',
+};
+
+export const DEFAULT_VIDEO_EDITOR_SETTINGS: VideoEditorSettings = {
+  version: 1,
+  lastUpdated: new Date().toISOString(),
+  effects: DEFAULT_VIDEO_EDITOR_EFFECTS,
+  background: DEFAULT_VIDEO_EDITOR_BACKGROUND,
+  export: DEFAULT_VIDEO_EDITOR_EXPORT,
+  regions: DEFAULT_VIDEO_EDITOR_REGIONS,
+  ui: DEFAULT_VIDEO_EDITOR_UI,
+};
+
+export const SETTINGS_STORAGE_KEY = 'openscreen_video_editor_settings';

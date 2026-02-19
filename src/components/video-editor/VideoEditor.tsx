@@ -10,12 +10,12 @@ import PlaybackControls from "./PlaybackControls";
 import TimelineEditor from "./timeline/TimelineEditor";
 import { SettingsPanel } from "./SettingsPanel";
 import { ExportDialog } from "./ExportDialog";
+import { useSettingsPersistence } from "@/hooks/useSettingsPersistence";
 
 import type { Span } from "dnd-timeline";
 import {
   DEFAULT_ZOOM_DEPTH,
   clampFocusToDepth,
-  DEFAULT_CROP_REGION,
   DEFAULT_ANNOTATION_POSITION,
   DEFAULT_ANNOTATION_SIZE,
   DEFAULT_ANNOTATION_STYLE,
@@ -32,9 +32,6 @@ import { VideoExporter, GifExporter, type ExportProgress, type ExportQuality, ty
 import { type AspectRatio, getAspectRatioValue } from "@/utils/aspectRatioUtils";
 import { getAssetPath } from "@/lib/assetPath";
 
-const WALLPAPER_COUNT = 18;
-const WALLPAPER_PATHS = Array.from({ length: WALLPAPER_COUNT }, (_, i) => `/wallpapers/wallpaper${i + 1}.jpg`);
-
 export default function VideoEditor() {
   const [videoPath, setVideoPath] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,16 +39,27 @@ export default function VideoEditor() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [wallpaper, setWallpaper] = useState<string>(WALLPAPER_PATHS[0]);
-  const [shadowIntensity, setShadowIntensity] = useState(0);
-  const [showBlur, setShowBlur] = useState(false);
-  const [motionBlurEnabled, setMotionBlurEnabled] = useState(false);
-  const [borderRadius, setBorderRadius] = useState(0);
-  const [padding, setPadding] = useState(50);
-  const [cropRegion, setCropRegion] = useState<CropRegion>(DEFAULT_CROP_REGION);
-  const [zoomRegions, setZoomRegions] = useState<ZoomRegion[]>([]);
+  
+  const { 
+    settings, 
+    isLoaded: isSettingsLoaded, 
+    updateEffects, 
+    updateBackground, 
+    updateExport, 
+    updateRegions,
+    updateUI,
+  } = useSettingsPersistence();
+  
+  const [wallpaper, setWallpaperState] = useState<string>(settings.background.value);
+  const [shadowIntensity, setShadowIntensityState] = useState(settings.effects.shadowIntensity);
+  const [showBlur, setShowBlurState] = useState(settings.effects.blurBgEnabled);
+  const [motionBlurEnabled, setMotionBlurEnabledState] = useState(settings.effects.motionBlurEnabled);
+  const [borderRadius, setBorderRadiusState] = useState(settings.effects.borderRadius);
+  const [padding, setPaddingState] = useState(settings.effects.padding);
+  const [cropRegion, setCropRegionState] = useState<CropRegion>(settings.regions.cropRegion);
+  const [zoomRegions, setZoomRegions] = useState<ZoomRegion[]>(settings.regions.zoomRegions);
   const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null);
-  const [trimRegions, setTrimRegions] = useState<TrimRegion[]>([]);
+  const [trimRegions, setTrimRegions] = useState<TrimRegion[]>(settings.regions.trimRegions);
   const [selectedTrimId, setSelectedTrimId] = useState<string | null>(null);
   const [annotationRegions, setAnnotationRegions] = useState<AnnotationRegion[]>([]);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
@@ -60,18 +68,98 @@ export default function VideoEditor() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
-  const [exportQuality, setExportQuality] = useState<ExportQuality>('good');
-  const [exportFormat, setExportFormat] = useState<ExportFormat>('mp4');
-  const [gifFrameRate, setGifFrameRate] = useState<GifFrameRate>(15);
-  const [gifLoop, setGifLoop] = useState(true);
-  const [gifSizePreset, setGifSizePreset] = useState<GifSizePreset>('medium');
+  const [exportQuality, setExportQualityState] = useState<ExportQuality>(settings.export.quality);
+  const [exportFormat, setExportFormatState] = useState<ExportFormat>(settings.export.format);
+  const [gifFrameRate, setGifFrameRateState] = useState<GifFrameRate>(settings.export.gifFrameRate);
+  const [gifLoop, setGifLoopState] = useState(settings.export.gifLoop);
+  const [gifSizePreset, setGifSizePresetState] = useState<GifSizePreset>(settings.export.gifSizePreset);
+  const [activeBackgroundTab, setActiveBackgroundTabState] = useState<'image' | 'color' | 'gradient'>(settings.ui.activeBackgroundTab);
 
   const videoPlaybackRef = useRef<VideoPlaybackRef>(null);
   const nextZoomIdRef = useRef(1);
   const nextTrimIdRef = useRef(1);
   const nextAnnotationIdRef = useRef(1);
-  const nextAnnotationZIndexRef = useRef(1); // Track z-index for stacking order
+  const nextAnnotationZIndexRef = useRef(1);
   const exporterRef = useRef<VideoExporter | null>(null);
+  
+  const addCustomImage = useCallback((imageUrl: string) => {
+    updateBackground({ 
+      customImages: [...settings.background.customImages, imageUrl] 
+    });
+  }, [settings.background.customImages, updateBackground]);
+  
+  const removeCustomImage = useCallback((imageUrl: string) => {
+    const updatedImages = settings.background.customImages.filter(img => img !== imageUrl);
+    updateBackground({ customImages: updatedImages });
+    if (wallpaper === imageUrl) {
+      setWallpaperState('wallpapers/wallpaper1.jpg');
+    }
+  }, [settings.background.customImages, wallpaper, updateBackground]);
+  
+  const setWallpaper = useCallback((value: string) => {
+    setWallpaperState(value);
+    updateBackground({ value });
+  }, [updateBackground]);
+  
+  const setShadowIntensity = useCallback((value: number) => {
+    setShadowIntensityState(value);
+    updateEffects({ shadowIntensity: value });
+  }, [updateEffects]);
+  
+  const setShowBlur = useCallback((value: boolean) => {
+    setShowBlurState(value);
+    updateEffects({ blurBgEnabled: value });
+  }, [updateEffects]);
+  
+  const setMotionBlurEnabled = useCallback((value: boolean) => {
+    setMotionBlurEnabledState(value);
+    updateEffects({ motionBlurEnabled: value });
+  }, [updateEffects]);
+  
+  const setBorderRadius = useCallback((value: number) => {
+    setBorderRadiusState(value);
+    updateEffects({ borderRadius: value });
+  }, [updateEffects]);
+  
+  const setPadding = useCallback((value: number) => {
+    setPaddingState(value);
+    updateEffects({ padding: value });
+  }, [updateEffects]);
+  
+  const setCropRegion = useCallback((value: CropRegion) => {
+    setCropRegionState(value);
+    updateRegions({ cropRegion: value });
+  }, [updateRegions]);
+  
+  const setExportQuality = useCallback((value: ExportQuality) => {
+    setExportQualityState(value);
+    updateExport({ quality: value });
+  }, [updateExport]);
+  
+  const setExportFormat = useCallback((value: ExportFormat) => {
+    setExportFormatState(value);
+    updateExport({ format: value });
+  }, [updateExport]);
+  
+  const setGifFrameRate = useCallback((value: GifFrameRate) => {
+    setGifFrameRateState(value);
+    updateExport({ gifFrameRate: value });
+  }, [updateExport]);
+  
+  const setGifLoop = useCallback((value: boolean) => {
+    setGifLoopState(value);
+    updateExport({ gifLoop: value });
+  }, [updateExport]);
+  
+  const setGifSizePreset = useCallback((value: GifSizePreset) => {
+    setGifSizePresetState(value);
+    updateExport({ gifSizePreset: value });
+  }, [updateExport]);
+  
+  const setActiveBackgroundTab = useCallback((value: 'image' | 'color' | 'gradient') => {
+    setActiveBackgroundTabState(value);
+    updateUI({ activeBackgroundTab: value });
+  }, [updateUI]);
 
   // Helper to convert file path to proper file:// URL
   const toFileUrl = (filePath: string): string => {
@@ -109,22 +197,41 @@ export default function VideoEditor() {
     loadVideo();
   }, []);
 
-  // Initialize default wallpaper with resolved asset path
+  useEffect(() => {
+    if (isSettingsLoaded) {
+      setWallpaperState(settings.background.value);
+      setShadowIntensityState(settings.effects.shadowIntensity);
+      setShowBlurState(settings.effects.blurBgEnabled);
+      setMotionBlurEnabledState(settings.effects.motionBlurEnabled);
+      setBorderRadiusState(settings.effects.borderRadius);
+      setPaddingState(settings.effects.padding);
+      setCropRegionState(settings.regions.cropRegion);
+      setZoomRegions(settings.regions.zoomRegions);
+      setTrimRegions(settings.regions.trimRegions);
+      setExportQualityState(settings.export.quality);
+      setExportFormatState(settings.export.format);
+      setGifFrameRateState(settings.export.gifFrameRate);
+      setGifLoopState(settings.export.gifLoop);
+      setGifSizePresetState(settings.export.gifSizePreset);
+      setActiveBackgroundTabState(settings.ui.activeBackgroundTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSettingsLoaded]);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         const resolvedPath = await getAssetPath('wallpapers/wallpaper1.jpg');
-        if (mounted) {
-          setWallpaper(resolvedPath);
+        if (mounted && !isSettingsLoaded) {
+          setWallpaperState(resolvedPath);
         }
       } catch (err) {
-        // If resolution fails, keep the fallback
         console.warn('Failed to resolve default wallpaper path:', err);
       }
     })();
     return () => { mounted = false };
-  }, []);
+  }, [isSettingsLoaded]);
 
   function togglePlayPause() {
     const playback = videoPlaybackRef.current;
@@ -174,11 +281,15 @@ export default function VideoEditor() {
       depth: DEFAULT_ZOOM_DEPTH,
       focus: { cx: 0.5, cy: 0.5 },
     };
-    setZoomRegions((prev) => [...prev, newRegion]);
+    setZoomRegions((prev) => {
+      const updated = [...prev, newRegion];
+      updateRegions({ zoomRegions: updated });
+      return updated;
+    });
     setSelectedZoomId(id);
     setSelectedTrimId(null);
     setSelectedAnnotationId(null);
-  }, []);
+  }, [updateRegions]);
 
   const handleTrimAdded = useCallback((span: Span) => {
     const id = `trim-${nextTrimIdRef.current++}`;
@@ -187,15 +298,19 @@ export default function VideoEditor() {
       startMs: Math.round(span.start),
       endMs: Math.round(span.end),
     };
-    setTrimRegions((prev) => [...prev, newRegion]);
+    setTrimRegions((prev) => {
+      const updated = [...prev, newRegion];
+      updateRegions({ trimRegions: updated });
+      return updated;
+    });
     setSelectedTrimId(id);
     setSelectedZoomId(null);
     setSelectedAnnotationId(null);
-  }, []);
+  }, [updateRegions]);
 
   const handleZoomSpanChange = useCallback((id: string, span: Span) => {
-    setZoomRegions((prev) =>
-      prev.map((region) =>
+    setZoomRegions((prev) => {
+      const updated = prev.map((region) =>
         region.id === id
           ? {
               ...region,
@@ -203,13 +318,15 @@ export default function VideoEditor() {
               endMs: Math.round(span.end),
             }
           : region,
-      ),
-    );
-  }, []);
+      );
+      updateRegions({ zoomRegions: updated });
+      return updated;
+    });
+  }, [updateRegions]);
 
   const handleTrimSpanChange = useCallback((id: string, span: Span) => {
-    setTrimRegions((prev) =>
-      prev.map((region) =>
+    setTrimRegions((prev) => {
+      const updated = prev.map((region) =>
         region.id === id
           ? {
               ...region,
@@ -217,27 +334,31 @@ export default function VideoEditor() {
               endMs: Math.round(span.end),
             }
           : region,
-      ),
-    );
-  }, []);
+      );
+      updateRegions({ trimRegions: updated });
+      return updated;
+    });
+  }, [updateRegions]);
 
   const handleZoomFocusChange = useCallback((id: string, focus: ZoomFocus) => {
-    setZoomRegions((prev) =>
-      prev.map((region) =>
+    setZoomRegions((prev) => {
+      const updated = prev.map((region) =>
         region.id === id
           ? {
               ...region,
               focus: clampFocusToDepth(focus, region.depth),
             }
           : region,
-      ),
-    );
-  }, []);
+      );
+      updateRegions({ zoomRegions: updated });
+      return updated;
+    });
+  }, [updateRegions]);
 
   const handleZoomDepthChange = useCallback((depth: ZoomDepth) => {
     if (!selectedZoomId) return;
-    setZoomRegions((prev) =>
-      prev.map((region) =>
+    setZoomRegions((prev) => {
+      const updated = prev.map((region) =>
         region.id === selectedZoomId
           ? {
               ...region,
@@ -245,23 +366,33 @@ export default function VideoEditor() {
               focus: clampFocusToDepth(region.focus, depth),
             }
           : region,
-      ),
-    );
-  }, [selectedZoomId]);
+      );
+      updateRegions({ zoomRegions: updated });
+      return updated;
+    });
+  }, [selectedZoomId, updateRegions]);
 
   const handleZoomDelete = useCallback((id: string) => {
-    setZoomRegions((prev) => prev.filter((region) => region.id !== id));
+    setZoomRegions((prev) => {
+      const updated = prev.filter((region) => region.id !== id);
+      updateRegions({ zoomRegions: updated });
+      return updated;
+    });
     if (selectedZoomId === id) {
       setSelectedZoomId(null);
     }
-  }, [selectedZoomId]);
+  }, [selectedZoomId, updateRegions]);
 
   const handleTrimDelete = useCallback((id: string) => {
-    setTrimRegions((prev) => prev.filter((region) => region.id !== id));
+    setTrimRegions((prev) => {
+      const updated = prev.filter((region) => region.id !== id);
+      updateRegions({ trimRegions: updated });
+      return updated;
+    });
     if (selectedTrimId === id) {
       setSelectedTrimId(null);
     }
-  }, [selectedTrimId]);
+  }, [selectedTrimId, updateRegions]);
 
   const handleAnnotationAdded = useCallback((span: Span) => {
     const id = `annotation-${nextAnnotationIdRef.current++}`;
@@ -677,7 +808,6 @@ export default function VideoEditor() {
       return;
     }
 
-    // Build export settings from current state
     const sourceWidth = video.videoWidth || 1920;
     const sourceHeight = video.videoHeight || 1080;
     const gifDimensions = calculateOutputDimensions(sourceWidth, sourceHeight, gifSizePreset, GIF_SIZE_PRESETS);
@@ -878,6 +1008,11 @@ export default function VideoEditor() {
           onAnnotationStyleChange={handleAnnotationStyleChange}
           onAnnotationFigureDataChange={handleAnnotationFigureDataChange}
           onAnnotationDelete={handleAnnotationDelete}
+          customImages={settings.background.customImages}
+          onCustomImageAdd={addCustomImage}
+          onCustomImageRemove={removeCustomImage}
+          activeBackgroundTab={activeBackgroundTab}
+          onActiveBackgroundTabChange={setActiveBackgroundTab}
         />
       </div>
 
