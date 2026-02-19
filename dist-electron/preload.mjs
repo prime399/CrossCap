@@ -34,6 +34,9 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   setRecordingState: (recording) => {
     return electron.ipcRenderer.invoke("set-recording-state", recording);
   },
+  getCursorTelemetry: (videoPath) => {
+    return electron.ipcRenderer.invoke("get-cursor-telemetry", videoPath);
+  },
   onStopRecordingFromTray: (callback) => {
     const listener = () => callback();
     electron.ipcRenderer.on("stop-recording-from-tray", listener);
@@ -56,6 +59,27 @@ electron.contextBridge.exposeInMainWorld("electronAPI", {
   },
   clearCurrentVideoPath: () => {
     return electron.ipcRenderer.invoke("clear-current-video-path");
+  },
+  saveProjectFile: (projectData, suggestedName, existingProjectPath) => {
+    return electron.ipcRenderer.invoke("save-project-file", projectData, suggestedName, existingProjectPath);
+  },
+  loadProjectFile: () => {
+    return electron.ipcRenderer.invoke("load-project-file");
+  },
+  onMenuLoadProject: (callback) => {
+    const listener = () => callback();
+    electron.ipcRenderer.on("menu-load-project", listener);
+    return () => electron.ipcRenderer.removeListener("menu-load-project", listener);
+  },
+  onMenuSaveProject: (callback) => {
+    const listener = () => callback();
+    electron.ipcRenderer.on("menu-save-project", listener);
+    return () => electron.ipcRenderer.removeListener("menu-save-project", listener);
+  },
+  onMenuSaveProjectAs: (callback) => {
+    const listener = () => callback();
+    electron.ipcRenderer.on("menu-save-project-as", listener);
+    return () => electron.ipcRenderer.removeListener("menu-save-project-as", listener);
   },
   getPlatform: () => {
     return electron.ipcRenderer.invoke("get-platform");

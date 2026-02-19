@@ -1,7 +1,352 @@
-import { ipcMain, screen, BrowserWindow, desktopCapturer, shell, app, dialog, nativeImage, Tray, Menu } from "electron";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
 import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { ipcMain, desktopCapturer, shell, app, dialog, screen, BrowserWindow, nativeImage, Tray, Menu } from "electron";
+const PROJECT_FILE_EXTENSION = "openscreen";
+const CURSOR_TELEMETRY_VERSION = 1;
+const CURSOR_SAMPLE_INTERVAL_MS = 100;
+const MAX_CURSOR_SAMPLES = 60 * 60 * 10;
+let selectedSource = null;
+let currentVideoPath = null;
+let cursorCaptureInterval = null;
+let cursorCaptureStartTimeMs = 0;
+let activeCursorSamples = [];
+let pendingCursorSamples = [];
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+function stopCursorCapture() {
+  if (cursorCaptureInterval) {
+    clearInterval(cursorCaptureInterval);
+    cursorCaptureInterval = null;
+  }
+}
+function sampleCursorPoint() {
+  const cursor = screen.getCursorScreenPoint();
+  const sourceDisplayId = Number(selectedSource == null ? void 0 : selectedSource.display_id);
+  const sourceDisplay = Number.isFinite(sourceDisplayId) ? screen.getAllDisplays().find((display2) => display2.id === sourceDisplayId) ?? null : null;
+  const display = sourceDisplay ?? screen.getDisplayNearestPoint(cursor);
+  const bounds = display.bounds;
+  const width = Math.max(1, bounds.width);
+  const height = Math.max(1, bounds.height);
+  const cx = clamp((cursor.x - bounds.x) / width, 0, 1);
+  const cy = clamp((cursor.y - bounds.y) / height, 0, 1);
+  activeCursorSamples.push({
+    timeMs: Math.max(0, Date.now() - cursorCaptureStartTimeMs),
+    cx,
+    cy
+  });
+  if (activeCursorSamples.length > MAX_CURSOR_SAMPLES) {
+    activeCursorSamples.shift();
+  }
+}
+function registerIpcHandlers(createEditorWindow2, createSourceSelectorWindow2, getMainWindow, getSourceSelectorWindow, onRecordingStateChange) {
+  ipcMain.handle("get-sources", async (_, opts) => {
+    const sources = await desktopCapturer.getSources(opts);
+    return sources.map((source) => ({
+      id: source.id,
+      name: source.name,
+      display_id: source.display_id,
+      thumbnail: source.thumbnail ? source.thumbnail.toDataURL() : null,
+      appIcon: source.appIcon ? source.appIcon.toDataURL() : null
+    }));
+  });
+  ipcMain.handle("select-source", (_, source) => {
+    selectedSource = source;
+    const sourceSelectorWin = getSourceSelectorWindow();
+    if (sourceSelectorWin) {
+      sourceSelectorWin.close();
+    }
+    return selectedSource;
+  });
+  ipcMain.handle("get-selected-source", () => {
+    return selectedSource;
+  });
+  ipcMain.handle("open-source-selector", () => {
+    const sourceSelectorWin = getSourceSelectorWindow();
+    if (sourceSelectorWin) {
+      sourceSelectorWin.focus();
+      return;
+    }
+    createSourceSelectorWindow2();
+  });
+  ipcMain.handle("switch-to-editor", () => {
+    const mainWin = getMainWindow();
+    if (mainWin) {
+      mainWin.close();
+    }
+    createEditorWindow2();
+  });
+  ipcMain.handle("store-recorded-video", async (_, videoData, fileName) => {
+    try {
+      const videoPath = path.join(RECORDINGS_DIR, fileName);
+      await fs.writeFile(videoPath, Buffer.from(videoData));
+      currentVideoPath = videoPath;
+      const telemetryPath = `${videoPath}.cursor.json`;
+      if (pendingCursorSamples.length > 0) {
+        await fs.writeFile(
+          telemetryPath,
+          JSON.stringify(
+            { version: CURSOR_TELEMETRY_VERSION, samples: pendingCursorSamples },
+            null,
+            2
+          ),
+          "utf-8"
+        );
+      }
+      pendingCursorSamples = [];
+      return {
+        success: true,
+        path: videoPath,
+        message: "Video stored successfully"
+      };
+    } catch (error) {
+      console.error("Failed to store video:", error);
+      return {
+        success: false,
+        message: "Failed to store video",
+        error: String(error)
+      };
+    }
+  });
+  ipcMain.handle("get-recorded-video-path", async () => {
+    try {
+      const files = await fs.readdir(RECORDINGS_DIR);
+      const videoFiles = files.filter((file) => file.endsWith(".webm"));
+      if (videoFiles.length === 0) {
+        return { success: false, message: "No recorded video found" };
+      }
+      const latestVideo = videoFiles.sort().reverse()[0];
+      const videoPath = path.join(RECORDINGS_DIR, latestVideo);
+      return { success: true, path: videoPath };
+    } catch (error) {
+      console.error("Failed to get video path:", error);
+      return { success: false, message: "Failed to get video path", error: String(error) };
+    }
+  });
+  ipcMain.handle("set-recording-state", (_, recording) => {
+    if (recording) {
+      stopCursorCapture();
+      activeCursorSamples = [];
+      pendingCursorSamples = [];
+      cursorCaptureStartTimeMs = Date.now();
+      sampleCursorPoint();
+      cursorCaptureInterval = setInterval(sampleCursorPoint, CURSOR_SAMPLE_INTERVAL_MS);
+    } else {
+      stopCursorCapture();
+      pendingCursorSamples = [...activeCursorSamples];
+      activeCursorSamples = [];
+    }
+    const source = selectedSource || { name: "Screen" };
+    if (onRecordingStateChange) {
+      onRecordingStateChange(recording, source.name);
+    }
+  });
+  ipcMain.handle("get-cursor-telemetry", async (_, videoPath) => {
+    const targetVideoPath = videoPath ?? currentVideoPath;
+    if (!targetVideoPath) {
+      return { success: true, samples: [] };
+    }
+    const telemetryPath = `${targetVideoPath}.cursor.json`;
+    try {
+      const content = await fs.readFile(telemetryPath, "utf-8");
+      const parsed = JSON.parse(content);
+      const rawSamples = Array.isArray(parsed) ? parsed : Array.isArray(parsed == null ? void 0 : parsed.samples) ? parsed.samples : [];
+      const samples = rawSamples.filter((sample) => Boolean(sample && typeof sample === "object")).map((sample) => {
+        const point = sample;
+        return {
+          timeMs: typeof point.timeMs === "number" && Number.isFinite(point.timeMs) ? Math.max(0, point.timeMs) : 0,
+          cx: typeof point.cx === "number" && Number.isFinite(point.cx) ? clamp(point.cx, 0, 1) : 0.5,
+          cy: typeof point.cy === "number" && Number.isFinite(point.cy) ? clamp(point.cy, 0, 1) : 0.5
+        };
+      }).sort((a, b) => a.timeMs - b.timeMs);
+      return { success: true, samples };
+    } catch (error) {
+      const nodeError = error;
+      if (nodeError.code === "ENOENT") {
+        return { success: true, samples: [] };
+      }
+      console.error("Failed to load cursor telemetry:", error);
+      return {
+        success: false,
+        message: "Failed to load cursor telemetry",
+        error: String(error),
+        samples: []
+      };
+    }
+  });
+  ipcMain.handle("open-external-url", async (_, url) => {
+    try {
+      await shell.openExternal(url);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to open URL:", error);
+      return { success: false, error: String(error) };
+    }
+  });
+  ipcMain.handle("get-asset-base-path", () => {
+    try {
+      if (app.isPackaged) {
+        return path.join(process.resourcesPath, "assets");
+      }
+      return path.join(app.getAppPath(), "public", "assets");
+    } catch (err) {
+      console.error("Failed to resolve asset base path:", err);
+      return null;
+    }
+  });
+  ipcMain.handle("save-exported-video", async (_, videoData, fileName) => {
+    try {
+      const isGif = fileName.toLowerCase().endsWith(".gif");
+      const filters = isGif ? [{ name: "GIF Image", extensions: ["gif"] }] : [{ name: "MP4 Video", extensions: ["mp4"] }];
+      const result = await dialog.showSaveDialog({
+        title: isGif ? "Save Exported GIF" : "Save Exported Video",
+        defaultPath: path.join(app.getPath("downloads"), fileName),
+        filters,
+        properties: ["createDirectory", "showOverwriteConfirmation"]
+      });
+      if (result.canceled || !result.filePath) {
+        return {
+          success: false,
+          cancelled: true,
+          message: "Export cancelled"
+        };
+      }
+      await fs.writeFile(result.filePath, Buffer.from(videoData));
+      return {
+        success: true,
+        path: result.filePath,
+        message: "Video exported successfully"
+      };
+    } catch (error) {
+      console.error("Failed to save exported video:", error);
+      return {
+        success: false,
+        message: "Failed to save exported video",
+        error: String(error)
+      };
+    }
+  });
+  ipcMain.handle("open-video-file-picker", async () => {
+    try {
+      const result = await dialog.showOpenDialog({
+        title: "Select Video File",
+        defaultPath: RECORDINGS_DIR,
+        filters: [
+          { name: "Video Files", extensions: ["webm", "mp4", "mov", "avi", "mkv"] },
+          { name: "All Files", extensions: ["*"] }
+        ],
+        properties: ["openFile"]
+      });
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, cancelled: true };
+      }
+      return {
+        success: true,
+        path: result.filePaths[0]
+      };
+    } catch (error) {
+      console.error("Failed to open file picker:", error);
+      return {
+        success: false,
+        message: "Failed to open file picker",
+        error: String(error)
+      };
+    }
+  });
+  ipcMain.handle(
+    "save-project-file",
+    async (_, projectData, suggestedName, existingProjectPath) => {
+      try {
+        if (existingProjectPath) {
+          await fs.writeFile(existingProjectPath, JSON.stringify(projectData, null, 2), "utf-8");
+          return {
+            success: true,
+            path: existingProjectPath,
+            message: "Project saved successfully"
+          };
+        }
+        const safeName = (suggestedName || `project-${Date.now()}`).replace(/[^a-zA-Z0-9-_]/g, "_");
+        const defaultName = safeName.endsWith(`.${PROJECT_FILE_EXTENSION}`) ? safeName : `${safeName}.${PROJECT_FILE_EXTENSION}`;
+        const result = await dialog.showSaveDialog({
+          title: "Save OpenScreen Project",
+          defaultPath: path.join(RECORDINGS_DIR, defaultName),
+          filters: [
+            { name: "OpenScreen Project", extensions: [PROJECT_FILE_EXTENSION] },
+            { name: "JSON", extensions: ["json"] }
+          ],
+          properties: ["createDirectory", "showOverwriteConfirmation"]
+        });
+        if (result.canceled || !result.filePath) {
+          return {
+            success: false,
+            cancelled: true,
+            message: "Save project cancelled"
+          };
+        }
+        await fs.writeFile(result.filePath, JSON.stringify(projectData, null, 2), "utf-8");
+        return {
+          success: true,
+          path: result.filePath,
+          message: "Project saved successfully"
+        };
+      } catch (error) {
+        console.error("Failed to save project file:", error);
+        return {
+          success: false,
+          message: "Failed to save project file",
+          error: String(error)
+        };
+      }
+    }
+  );
+  ipcMain.handle("load-project-file", async () => {
+    try {
+      const result = await dialog.showOpenDialog({
+        title: "Open OpenScreen Project",
+        defaultPath: RECORDINGS_DIR,
+        filters: [
+          { name: "OpenScreen Project", extensions: [PROJECT_FILE_EXTENSION] },
+          { name: "JSON", extensions: ["json"] },
+          { name: "All Files", extensions: ["*"] }
+        ],
+        properties: ["openFile"]
+      });
+      if (result.canceled || result.filePaths.length === 0) {
+        return { success: false, cancelled: true, message: "Open project cancelled" };
+      }
+      const filePath = result.filePaths[0];
+      const content = await fs.readFile(filePath, "utf-8");
+      const project = JSON.parse(content);
+      return {
+        success: true,
+        path: filePath,
+        project
+      };
+    } catch (error) {
+      console.error("Failed to load project file:", error);
+      return {
+        success: false,
+        message: "Failed to load project file",
+        error: String(error)
+      };
+    }
+  });
+  ipcMain.handle("set-current-video-path", (_, path2) => {
+    currentVideoPath = path2;
+    return { success: true };
+  });
+  ipcMain.handle("get-current-video-path", () => {
+    return currentVideoPath ? { success: true, path: currentVideoPath } : { success: false };
+  });
+  ipcMain.handle("clear-current-video-path", () => {
+    currentVideoPath = null;
+    return { success: true };
+  });
+  ipcMain.handle("get-platform", () => {
+    return process.platform;
+  });
+}
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL$1 = process.env["VITE_DEV_SERVER_URL"];
@@ -126,179 +471,6 @@ function createSourceSelectorWindow() {
   }
   return win;
 }
-let selectedSource = null;
-function registerIpcHandlers(createEditorWindow2, createSourceSelectorWindow2, getMainWindow, getSourceSelectorWindow, onRecordingStateChange) {
-  ipcMain.handle("get-sources", async (_, opts) => {
-    const sources = await desktopCapturer.getSources(opts);
-    return sources.map((source) => ({
-      id: source.id,
-      name: source.name,
-      display_id: source.display_id,
-      thumbnail: source.thumbnail ? source.thumbnail.toDataURL() : null,
-      appIcon: source.appIcon ? source.appIcon.toDataURL() : null
-    }));
-  });
-  ipcMain.handle("select-source", (_, source) => {
-    selectedSource = source;
-    const sourceSelectorWin = getSourceSelectorWindow();
-    if (sourceSelectorWin) {
-      sourceSelectorWin.close();
-    }
-    return selectedSource;
-  });
-  ipcMain.handle("get-selected-source", () => {
-    return selectedSource;
-  });
-  ipcMain.handle("open-source-selector", () => {
-    const sourceSelectorWin = getSourceSelectorWindow();
-    if (sourceSelectorWin) {
-      sourceSelectorWin.focus();
-      return;
-    }
-    createSourceSelectorWindow2();
-  });
-  ipcMain.handle("switch-to-editor", () => {
-    const mainWin = getMainWindow();
-    if (mainWin) {
-      mainWin.close();
-    }
-    createEditorWindow2();
-  });
-  ipcMain.handle("store-recorded-video", async (_, videoData, fileName) => {
-    try {
-      const videoPath = path.join(RECORDINGS_DIR, fileName);
-      await fs.writeFile(videoPath, Buffer.from(videoData));
-      currentVideoPath = videoPath;
-      return {
-        success: true,
-        path: videoPath,
-        message: "Video stored successfully"
-      };
-    } catch (error) {
-      console.error("Failed to store video:", error);
-      return {
-        success: false,
-        message: "Failed to store video",
-        error: String(error)
-      };
-    }
-  });
-  ipcMain.handle("get-recorded-video-path", async () => {
-    try {
-      const files = await fs.readdir(RECORDINGS_DIR);
-      const videoFiles = files.filter((file) => file.endsWith(".webm"));
-      if (videoFiles.length === 0) {
-        return { success: false, message: "No recorded video found" };
-      }
-      const latestVideo = videoFiles.sort().reverse()[0];
-      const videoPath = path.join(RECORDINGS_DIR, latestVideo);
-      return { success: true, path: videoPath };
-    } catch (error) {
-      console.error("Failed to get video path:", error);
-      return { success: false, message: "Failed to get video path", error: String(error) };
-    }
-  });
-  ipcMain.handle("set-recording-state", (_, recording) => {
-    const source = selectedSource || { name: "Screen" };
-    if (onRecordingStateChange) {
-      onRecordingStateChange(recording, source.name);
-    }
-  });
-  ipcMain.handle("open-external-url", async (_, url) => {
-    try {
-      await shell.openExternal(url);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to open URL:", error);
-      return { success: false, error: String(error) };
-    }
-  });
-  ipcMain.handle("get-asset-base-path", () => {
-    try {
-      if (app.isPackaged) {
-        return path.join(process.resourcesPath, "assets");
-      }
-      return path.join(app.getAppPath(), "public", "assets");
-    } catch (err) {
-      console.error("Failed to resolve asset base path:", err);
-      return null;
-    }
-  });
-  ipcMain.handle("save-exported-video", async (_, videoData, fileName) => {
-    try {
-      const isGif = fileName.toLowerCase().endsWith(".gif");
-      const filters = isGif ? [{ name: "GIF Image", extensions: ["gif"] }] : [{ name: "MP4 Video", extensions: ["mp4"] }];
-      const result = await dialog.showSaveDialog({
-        title: isGif ? "Save Exported GIF" : "Save Exported Video",
-        defaultPath: path.join(app.getPath("downloads"), fileName),
-        filters,
-        properties: ["createDirectory", "showOverwriteConfirmation"]
-      });
-      if (result.canceled || !result.filePath) {
-        return {
-          success: false,
-          cancelled: true,
-          message: "Export cancelled"
-        };
-      }
-      await fs.writeFile(result.filePath, Buffer.from(videoData));
-      return {
-        success: true,
-        path: result.filePath,
-        message: "Video exported successfully"
-      };
-    } catch (error) {
-      console.error("Failed to save exported video:", error);
-      return {
-        success: false,
-        message: "Failed to save exported video",
-        error: String(error)
-      };
-    }
-  });
-  ipcMain.handle("open-video-file-picker", async () => {
-    try {
-      const result = await dialog.showOpenDialog({
-        title: "Select Video File",
-        defaultPath: RECORDINGS_DIR,
-        filters: [
-          { name: "Video Files", extensions: ["webm", "mp4", "mov", "avi", "mkv"] },
-          { name: "All Files", extensions: ["*"] }
-        ],
-        properties: ["openFile"]
-      });
-      if (result.canceled || result.filePaths.length === 0) {
-        return { success: false, cancelled: true };
-      }
-      return {
-        success: true,
-        path: result.filePaths[0]
-      };
-    } catch (error) {
-      console.error("Failed to open file picker:", error);
-      return {
-        success: false,
-        message: "Failed to open file picker",
-        error: String(error)
-      };
-    }
-  });
-  let currentVideoPath = null;
-  ipcMain.handle("set-current-video-path", (_, path2) => {
-    currentVideoPath = path2;
-    return { success: true };
-  });
-  ipcMain.handle("get-current-video-path", () => {
-    return currentVideoPath ? { success: true, path: currentVideoPath } : { success: false };
-  });
-  ipcMain.handle("clear-current-video-path", () => {
-    currentVideoPath = null;
-    return { success: true };
-  });
-  ipcMain.handle("get-platform", () => {
-    return process.platform;
-  });
-}
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RECORDINGS_DIR = path.join(app.getPath("userData"), "recordings");
 async function ensureRecordingsDir() {
@@ -323,6 +495,91 @@ const defaultTrayIcon = getTrayIcon("openscreen.png");
 const recordingTrayIcon = getTrayIcon("rec-button.png");
 function createWindow() {
   mainWindow = createHudOverlayWindow();
+}
+function isEditorWindow(window) {
+  return window.webContents.getURL().includes("windowType=editor");
+}
+function sendEditorMenuAction(channel) {
+  let targetWindow = BrowserWindow.getFocusedWindow() ?? mainWindow;
+  if (!targetWindow || targetWindow.isDestroyed() || !isEditorWindow(targetWindow)) {
+    createEditorWindowWrapper();
+    targetWindow = mainWindow;
+    if (!targetWindow || targetWindow.isDestroyed()) return;
+    targetWindow.webContents.once("did-finish-load", () => {
+      if (!targetWindow || targetWindow.isDestroyed()) return;
+      targetWindow.webContents.send(channel);
+    });
+    return;
+  }
+  targetWindow.webContents.send(channel);
+}
+function setupApplicationMenu() {
+  const template = [
+    {
+      label: app.name,
+      submenu: [
+        { role: "about" },
+        { type: "separator" },
+        { role: "hide" },
+        { role: "hideOthers" },
+        { role: "unhide" },
+        { type: "separator" },
+        { role: "quit" }
+      ]
+    },
+    {
+      label: "File",
+      submenu: [
+        {
+          label: "Load Project…",
+          accelerator: "CmdOrCtrl+O",
+          click: () => sendEditorMenuAction("menu-load-project")
+        },
+        {
+          label: "Save Project…",
+          accelerator: "CmdOrCtrl+S",
+          click: () => sendEditorMenuAction("menu-save-project")
+        },
+        {
+          label: "Save Project As…",
+          accelerator: "CmdOrCtrl+Shift+S",
+          click: () => sendEditorMenuAction("menu-save-project-as")
+        }
+      ]
+    },
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "selectAll" }
+      ]
+    },
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" },
+        { role: "forceReload" },
+        { role: "toggleDevTools" },
+        { type: "separator" },
+        { role: "resetZoom" },
+        { role: "zoomIn" },
+        { role: "zoomOut" },
+        { type: "separator" },
+        { role: "togglefullscreen" }
+      ]
+    },
+    {
+      label: "Window",
+      submenu: [{ role: "minimize" }, { role: "close" }]
+    }
+  ];
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
 }
 function createTray() {
   tray = new Tray(defaultTrayIcon);
@@ -397,6 +654,7 @@ app.whenReady().then(async () => {
   });
   createTray();
   updateTrayMenu();
+  setupApplicationMenu();
   await ensureRecordingsDir();
   registerIpcHandlers(
     createEditorWindowWrapper,
