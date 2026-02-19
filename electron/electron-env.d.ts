@@ -21,9 +21,26 @@ declare namespace NodeJS {
 	}
 }
 
+interface ProcessedDesktopSource {
+	id: string;
+	name: string;
+	display_id: string;
+	thumbnail: string | null;
+	appIcon: string | null;
+}
+
+interface CursorTelemetryPoint {
+	timeMs: number;
+	cx: number;
+	cy: number;
+}
+
 // Used in Renderer process, expose in `preload.ts`
 interface Window {
 	electronAPI: {
+		hudOverlayHide: () => void;
+		hudOverlayClose: () => void;
+		getAssetBasePath: () => Promise<string | null>;
 		getSources: (opts: Electron.SourcesOptions) => Promise<ProcessedDesktopSource[]>;
 		switchToEditor: () => Promise<void>;
 		openSourceSelector: () => Promise<void>;
@@ -32,12 +49,20 @@ interface Window {
 		storeRecordedVideo: (
 			videoData: ArrayBuffer,
 			fileName: string,
-		) => Promise<{ success: boolean; path?: string; message?: string }>;
-		getRecordedVideoPath: () => Promise<{ success: boolean; path?: string; message?: string }>;
-		setRecordingState: (recording: boolean) => Promise<void>;
-		getCursorTelemetry: (
-			videoPath?: string,
 		) => Promise<{
+			success: boolean;
+			path?: string;
+			message: string;
+			error?: string;
+		}>;
+		getRecordedVideoPath: () => Promise<{
+			success: boolean;
+			path?: string;
+			message?: string;
+			error?: string;
+		}>;
+		setRecordingState: (recording: boolean) => Promise<void>;
+		getCursorTelemetry: (videoPath?: string) => Promise<{
 			success: boolean;
 			samples: CursorTelemetryPoint[];
 			message?: string;
@@ -48,7 +73,12 @@ interface Window {
 		saveExportedVideo: (
 			videoData: ArrayBuffer,
 			fileName: string,
-		) => Promise<{ success: boolean; path?: string; message?: string; cancelled?: boolean }>;
+		) => Promise<{
+			success: boolean;
+			path?: string;
+			message?: string;
+			cancelled?: boolean;
+		}>;
 		openVideoFilePicker: () => Promise<{ success: boolean; path?: string; cancelled?: boolean }>;
 		setCurrentVideoPath: (path: string) => Promise<{ success: boolean }>;
 		getCurrentVideoPath: () => Promise<{ success: boolean; path?: string }>;
@@ -76,21 +106,5 @@ interface Window {
 		onMenuSaveProject: (callback: () => void) => () => void;
 		onMenuSaveProjectAs: (callback: () => void) => () => void;
 		getPlatform: () => Promise<string>;
-		hudOverlayHide: () => void;
-		hudOverlayClose: () => void;
 	};
-}
-
-interface ProcessedDesktopSource {
-	id: string;
-	name: string;
-	display_id: string;
-	thumbnail: string | null;
-	appIcon: string | null;
-}
-
-interface CursorTelemetryPoint {
-	timeMs: number;
-	cx: number;
-	cy: number;
 }
