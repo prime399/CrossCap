@@ -182,14 +182,31 @@ export class VideoExporter {
 				return { success: false, error: "Export cancelled" };
 			}
 
-			// Finalize encoding
+			// --- Finalizing phase: flush encoder, encode audio, mux ---
+			const reportFinalizing = (step: string) => {
+				console.log(`[VideoExporter] Finalizing: ${step}`);
+				if (this.config.onProgress) {
+					this.config.onProgress({
+						currentFrame: totalFrames,
+						totalFrames,
+						percentage: 100,
+						estimatedTimeRemaining: 0,
+						phase: "finalizing",
+					});
+				}
+			};
+
+			reportFinalizing("flushing video encoder");
 			if (this.encoder && this.encoder.state === "configured") {
 				await this.encoder.flush();
 			}
+			console.log("[VideoExporter] Video encoder flushed");
 
 			if (audioTrack && !this.cancelled) {
 				try {
+					reportFinalizing("encoding audio track");
 					await this.encodeAudioTrack(audioTrack);
+					console.log("[VideoExporter] Audio track encoded");
 				} catch (audioError) {
 					console.warn(
 						"[VideoExporter] Audio encoding failed; continuing without audio",
@@ -198,11 +215,18 @@ export class VideoExporter {
 				}
 			}
 
-			// Wait for all muxing operations to complete
+			reportFinalizing("waiting for muxing to complete");
+			console.log(
+				`[VideoExporter] Waiting for ${this.muxingPromises.length} muxing ops`,
+			);
 			await Promise.all(this.muxingPromises);
+			console.log("[VideoExporter] All muxing operations complete");
 
-			// Finalize muxer and get output blob
+			reportFinalizing("writing MP4 container");
 			const blob = await this.muxer!.finalize();
+			console.log(
+				`[VideoExporter] Export done — ${(blob.size / 1024 / 1024).toFixed(1)} MB`,
+			);
 
 			return { success: true, blob };
 		} catch (error) {

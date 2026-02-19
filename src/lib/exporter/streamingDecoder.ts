@@ -85,6 +85,13 @@ export class StreamingVideoDecoder {
 			throw new Error("Must call loadMetadata() before decodeAll()");
 		}
 
+		console.log("[StreamingDecoder] Starting decode —", {
+			targetFps: targetFrameRate,
+			duration: this.metadata.duration,
+			sourceCodec: this.metadata.codec,
+			trimRegions: trimRegions?.length ?? 0,
+		});
+
 		const decoderConfig = await this.demuxer.getDecoderConfig("video");
 		const segments = this.computeSegments(this.metadata.duration, trimRegions);
 		const frameDurationUs = 1_000_000 / targetFrameRate;
@@ -227,6 +234,12 @@ export class StreamingVideoDecoder {
 			if (!frame) break;
 			frame.close();
 		}
+
+		console.log("[StreamingDecoder] Decode complete —", {
+			exportedFrames: exportFrameIndex,
+			segments: segments.length,
+			cancelled: this.cancelled,
+		});
 
 		try {
 			reader.cancel();

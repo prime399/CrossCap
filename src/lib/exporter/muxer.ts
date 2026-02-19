@@ -78,6 +78,7 @@ export class VideoMuxer {
 			throw new Error("Muxer not initialized");
 		}
 
+		console.log("[VideoMuxer] Finalizing MP4 container...");
 		await this.output.finalize();
 		const buffer = this.target.buffer;
 
@@ -85,6 +86,7 @@ export class VideoMuxer {
 			throw new Error("Failed to finalize output");
 		}
 
+		console.log(`[VideoMuxer] MP4 written — ${(buffer.byteLength / 1024 / 1024).toFixed(1)} MB`);
 		return new Blob([buffer], { type: "video/mp4" });
 	}
 }

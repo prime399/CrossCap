@@ -1160,6 +1160,12 @@ export default function VideoEditor() {
 			setExportProgress(null);
 			setExportError(null);
 
+			console.log("[Export] Starting export —", {
+				format: settings.format,
+				quality: settings.quality,
+				gifConfig: settings.gifConfig,
+			});
+
 			try {
 				const wasPlaying = isPlaying;
 				if (wasPlaying) {
@@ -1206,13 +1212,15 @@ export default function VideoEditor() {
 
 					exporterRef.current = gifExporter as unknown as VideoExporter;
 					const result = await gifExporter.export();
+					console.log("[Export] GIF export result:", { success: result.success, error: result.error, blobSize: result.blob?.size });
 
 					if (result.success && result.blob) {
 						const arrayBuffer = await result.blob.arrayBuffer();
 						const timestamp = Date.now();
 						const fileName = `export-${timestamp}.gif`;
-
+						console.log("[Export] Showing save dialog for GIF...");
 						const saveResult = await window.electronAPI.saveExportedVideo(arrayBuffer, fileName);
+						console.log("[Export] Save dialog result:", saveResult);
 
 						if (saveResult.cancelled) {
 							toast.info("Export cancelled");
@@ -1331,13 +1339,15 @@ export default function VideoEditor() {
 
 					exporterRef.current = exporter;
 					const result = await exporter.export();
+					console.log("[Export] MP4 export result:", { success: result.success, error: result.error, blobSize: result.blob?.size });
 
 					if (result.success && result.blob) {
 						const arrayBuffer = await result.blob.arrayBuffer();
 						const timestamp = Date.now();
 						const fileName = `export-${timestamp}.mp4`;
-
+						console.log("[Export] Showing save dialog for MP4...");
 						const saveResult = await window.electronAPI.saveExportedVideo(arrayBuffer, fileName);
+						console.log("[Export] Save dialog result:", saveResult);
 
 						if (saveResult.cancelled) {
 							toast.info("Export cancelled");
