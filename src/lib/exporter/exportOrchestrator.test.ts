@@ -1,7 +1,7 @@
 import * as fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import type { AspectRatio } from "@/utils/aspectRatioUtils";
-import { calculateExportDimensions } from "./exportOrchestrator";
+import { calculateExportDimensions } from "./types";
 
 const ASPECT_RATIOS: AspectRatio[] = ["16:9", "9:16", "1:1", "4:3", "4:5", "16:10", "10:16"];
 const QUALITIES = ["medium", "good", "source"] as const;

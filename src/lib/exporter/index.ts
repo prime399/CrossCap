@@ -1,18 +1,15 @@
 export type {
 	ExportContext,
-	ExportDimensions,
 	ExportHandle,
 } from "./exportOrchestrator";
-export {
-	calculateExportDimensions,
-	runExport,
-} from "./exportOrchestrator";
+export { runExport } from "./exportOrchestrator";
 export { FrameRenderer } from "./frameRenderer";
 export { GifExporter } from "./gifExporter";
 export { VideoMuxer } from "./muxer";
 export { StreamingVideoDecoder } from "./streamingDecoder";
 export type {
 	ExportConfig,
+	ExportDimensions,
 	ExportFormat,
 	ExportProgress,
 	ExportQuality,
@@ -24,6 +21,7 @@ export type {
 	VideoFrameData,
 } from "./types";
 export {
+	calculateExportDimensions,
 	calculateOutputDimensions,
 	GIF_FRAME_RATES,
 	GIF_SIZE_PRESETS,

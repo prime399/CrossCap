@@ -5,114 +5,15 @@ import type {
 	ZoomRegion,
 } from "@/components/video-editor/types";
 import type { AspectRatio } from "@/utils/aspectRatioUtils";
-import { getAspectRatioValue } from "@/utils/aspectRatioUtils";
 import { GifExporter } from "./gifExporter";
-import type { ExportProgress, ExportQuality, ExportResult, ExportSettings } from "./types";
+import {
+	calculateExportDimensions,
+	type ExportProgress,
+	type ExportQuality,
+	type ExportResult,
+	type ExportSettings,
+} from "./types";
 import { VideoExporter } from "./videoExporter";
-
-export interface ExportDimensions {
-	width: number;
-	height: number;
-	bitrate: number;
-}
-
-/**
- * Calculate MP4 export dimensions and bitrate from quality preset,
- * source dimensions, and aspect ratio.
- */
-export function calculateExportDimensions(
-	sourceWidth: number,
-	sourceHeight: number,
-	quality: ExportQuality,
-	aspectRatio: AspectRatio,
-): ExportDimensions {
-	const aspectRatioValue = getAspectRatioValue(aspectRatio);
-
-	if (quality === "source") {
-		return calculateSourceDimensions(sourceWidth, sourceHeight, aspectRatioValue);
-	}
-
-	const targetHeight = quality === "medium" ? 720 : 1080;
-	const exportHeight = Math.floor(targetHeight / 2) * 2;
-	const exportWidth = Math.floor((exportHeight * aspectRatioValue) / 2) * 2;
-
-	const totalPixels = exportWidth * exportHeight;
-	let bitrate = 30_000_000;
-	if (totalPixels <= 1280 * 720) {
-		bitrate = 10_000_000;
-	} else if (totalPixels <= 1920 * 1080) {
-		bitrate = 20_000_000;
-	}
-
-	return { width: exportWidth, height: exportHeight, bitrate };
-}
-
-function calculateSourceDimensions(
-	sourceWidth: number,
-	sourceHeight: number,
-	aspectRatioValue: number,
-): ExportDimensions {
-	let exportWidth = sourceWidth;
-	let exportHeight = sourceHeight;
-
-	if (aspectRatioValue === 1) {
-		const base = Math.floor(Math.min(sourceWidth, sourceHeight) / 2) * 2;
-		exportWidth = base;
-		exportHeight = base;
-	} else if (aspectRatioValue > 1) {
-		const result = findEvenDimensionsByWidth(sourceWidth, aspectRatioValue);
-		exportWidth = result.width;
-		exportHeight = result.height;
-	} else {
-		const result = findEvenDimensionsByHeight(sourceHeight, aspectRatioValue);
-		exportWidth = result.width;
-		exportHeight = result.height;
-	}
-
-	const totalPixels = exportWidth * exportHeight;
-	let bitrate = 30_000_000;
-	if (totalPixels > 1920 * 1080 && totalPixels <= 2560 * 1440) {
-		bitrate = 50_000_000;
-	} else if (totalPixels > 2560 * 1440) {
-		bitrate = 80_000_000;
-	}
-
-	return { width: exportWidth, height: exportHeight, bitrate };
-}
-
-function findEvenDimensionsByWidth(
-	sourceWidth: number,
-	aspectRatioValue: number,
-): { width: number; height: number } {
-	const baseWidth = Math.floor(sourceWidth / 2) * 2;
-	for (let w = baseWidth; w >= 100; w -= 2) {
-		const h = Math.round(w / aspectRatioValue);
-		if (h % 2 === 0 && Math.abs(w / h - aspectRatioValue) < 0.0001) {
-			return { width: w, height: h };
-		}
-	}
-	return {
-		width: baseWidth,
-		height: Math.floor(baseWidth / aspectRatioValue / 2) * 2,
-	};
-}
-
-function findEvenDimensionsByHeight(
-	sourceHeight: number,
-	aspectRatioValue: number,
-): { width: number; height: number } {
-	const baseHeight = Math.floor(sourceHeight / 2) * 2;
-	for (let h = baseHeight; h >= 100; h -= 2) {
-		const w = Math.round(h * aspectRatioValue);
-		if (w % 2 === 0 && Math.abs(w / h - aspectRatioValue) < 0.0001) {
-			return { width: w, height: h };
-		}
-	}
-	return {
-		width: Math.floor((baseHeight * aspectRatioValue) / 2) * 2,
-		height: baseHeight,
-	};
-}
 
 export interface ExportContext {
 	videoPath: string;
