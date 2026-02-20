@@ -642,7 +642,7 @@ export default function VideoEditor() {
 					<button
 						type="button"
 						onClick={handleLoadProject}
-						className="px-3 py-1.5 rounded-md bg-[#34B27B] text-white text-sm hover:bg-[#34B27B]/90"
+						className="px-3 py-1.5 rounded-md bg-cc-accent text-white text-sm hover:bg-cc-accent/90"
 					>
 						Load Project File
 					</button>
@@ -652,9 +652,9 @@ export default function VideoEditor() {
 	}
 
 	return (
-		<div className="flex flex-col h-screen bg-[#09090b] text-slate-200 overflow-hidden selection:bg-[#34B27B]/30">
+		<div className="flex flex-col h-screen bg-cc-surface-0 text-slate-200 overflow-hidden selection:bg-cc-accent/30">
 			<div
-				className="h-10 flex-shrink-0 bg-[#09090b]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-50"
+				className="h-10 flex-shrink-0 bg-cc-surface-0/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-50"
 				style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
 			>
 				<div className="flex-1" />
@@ -823,7 +823,7 @@ export default function VideoEditor() {
 					{/* Timeline section - full width */}
 					<Panel defaultSize={35} minSize={20}>
 						<div className="h-full px-5 pb-4">
-							<div className="h-full bg-[#09090b] rounded-2xl border border-white/5 shadow-lg overflow-hidden flex flex-col">
+							<div className="h-full bg-cc-surface-0 rounded-2xl border border-white/5 shadow-lg overflow-hidden flex flex-col">
 								<TimelineEditor
 									videoDuration={duration}
 									currentTime={currentTime}

@@ -1,4 +1,4 @@
-import { Pause, Play } from "lucide-react";
+import { Pause, Play } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 
@@ -44,9 +44,9 @@ export default function PlaybackControls({
 				aria-label={isPlaying ? "Pause" : "Play"}
 			>
 				{isPlaying ? (
-					<Pause className="w-3.5 h-3.5 fill-current" />
+					<Pause size={14} weight="fill" className="fill-current" />
 				) : (
-					<Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+					<Play size={14} weight="fill" className="fill-current ml-0.5" />
 				)}
 			</Button>
 
@@ -57,7 +57,7 @@ export default function PlaybackControls({
 			<div className="flex-1 relative h-6 flex items-center group">
 				{/* Custom Track Background */}
 				<div className="absolute left-0 right-0 h-0.5 bg-white/10 rounded-full overflow-hidden">
-					<div className="h-full bg-[#34B27B] rounded-full" style={{ width: `${progress}%` }} />
+					<div className="h-full bg-cc-accent rounded-full" style={{ width: `${progress}%` }} />
 				</div>
 
 				{/* Interactive Input */}

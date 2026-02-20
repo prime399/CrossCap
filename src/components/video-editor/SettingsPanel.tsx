@@ -2,20 +2,20 @@ import Block from "@uiw/react-color-block";
 import {
 	Bug,
 	Crop,
-	Download,
-	Film,
+	DownloadSimple,
+	FilmStrip,
 	FolderOpen,
 	Image,
-	MousePointer,
+	Cursor,
 	Palette,
-	Save,
-	Search,
-	Sparkles,
+	MagnifyingGlass,
+	FloppyDisk,
+	Sparkle,
 	Star,
-	Trash2,
-	Upload,
+	Trash,
+	UploadSimple,
 	X,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -196,7 +196,7 @@ export function SettingsPanel({
 		"#FF5722",
 		"#8BC34A",
 		"#FFC107",
-		"#34B27B",
+		"#f97316",
 		"#000000",
 		"#607D8B",
 		"#795548",
@@ -300,24 +300,24 @@ export function SettingsPanel({
 	}
 
 	return (
-		<div className="flex-[2] min-w-0 bg-[#09090b]/80 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col shadow-2xl shadow-black/50 h-full overflow-hidden">
+		<div className="flex-[2] min-w-0 bg-cc-surface-0/80 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col shadow-2xl shadow-black/50 h-full overflow-hidden">
 			<div className="flex-1 overflow-y-auto custom-scrollbar p-3 pb-0">
 				<Tabs value={activeSettingsTab} onValueChange={setActiveSettingsTab} className="w-full">
 					<TabsList className="mb-3 w-full grid grid-cols-4 h-9 rounded-xl p-1">
 						<TabsTrigger value="effects" className="gap-1.5 text-[11px]">
-							<Sparkles className="w-3.5 h-3.5" />
+							<Sparkle size={14} weight="duotone" />
 							Effects
 						</TabsTrigger>
 						<TabsTrigger value="background" className="gap-1.5 text-[11px]">
-							<Palette className="w-3.5 h-3.5" />
+							<Palette size={14} weight="duotone" />
 							Background
 						</TabsTrigger>
 						<TabsTrigger value="zoom" className="gap-1.5 text-[11px]">
-							<Search className="w-3.5 h-3.5" />
+							<MagnifyingGlass size={14} weight="duotone" />
 							Zoom
 						</TabsTrigger>
 						<TabsTrigger value="cursor" className="gap-1.5 text-[11px]">
-							<MousePointer className="w-3.5 h-3.5" />
+							<Cursor size={14} weight="duotone" />
 							Cursor
 						</TabsTrigger>
 					</TabsList>
@@ -329,7 +329,7 @@ export function SettingsPanel({
 								<Switch
 									checked={motionBlurEnabled}
 									onCheckedChange={onMotionBlurChange}
-									className="data-[state=checked]:bg-[#34B27B] scale-90"
+									className="data-[state=checked]:bg-cc-accent scale-90"
 								/>
 							</div>
 							<div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5 border border-white/5">
@@ -337,7 +337,7 @@ export function SettingsPanel({
 								<Switch
 									checked={showBlur}
 									onCheckedChange={onBlurChange}
-									className="data-[state=checked]:bg-[#34B27B] scale-90"
+									className="data-[state=checked]:bg-cc-accent scale-90"
 								/>
 							</div>
 						</div>
@@ -356,7 +356,7 @@ export function SettingsPanel({
 									min={0}
 									max={1}
 									step={0.01}
-									className="w-full [&_[role=slider]]:bg-[#34B27B] [&_[role=slider]]:border-[#34B27B] [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
+									className="w-full [&_[role=slider]]:bg-cc-accent [&_[role=slider]]:border-cc-accent [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
 								/>
 							</div>
 							<div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
@@ -370,7 +370,7 @@ export function SettingsPanel({
 									min={0}
 									max={16}
 									step={0.5}
-									className="w-full [&_[role=slider]]:bg-[#34B27B] [&_[role=slider]]:border-[#34B27B] [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
+									className="w-full [&_[role=slider]]:bg-cc-accent [&_[role=slider]]:border-cc-accent [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
 								/>
 							</div>
 						</div>
@@ -386,7 +386,7 @@ export function SettingsPanel({
 								min={0}
 								max={100}
 								step={1}
-								className="w-full [&_[role=slider]]:bg-[#34B27B] [&_[role=slider]]:border-[#34B27B] [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
+								className="w-full [&_[role=slider]]:bg-cc-accent [&_[role=slider]]:border-cc-accent [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
 							/>
 						</div>
 
@@ -395,7 +395,7 @@ export function SettingsPanel({
 							variant="outline"
 							className="w-full gap-1.5 bg-white/5 text-slate-200 border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white text-[11px] h-9 transition-all"
 						>
-							<Crop className="w-3.5 h-3.5" />
+							<Crop size={14} />
 							Crop Video
 						</Button>
 					</TabsContent>
@@ -410,15 +410,15 @@ export function SettingsPanel({
 						>
 							<TabsList className="mb-3 w-full grid grid-cols-3 h-8 rounded-xl p-1">
 								<TabsTrigger value="image" className="gap-1.5 text-[11px]">
-									<Image className="w-3.5 h-3.5" />
+									<Image size={14} />
 									Image
 								</TabsTrigger>
 								<TabsTrigger value="color" className="gap-1.5 text-[11px]">
-									<Palette className="w-3.5 h-3.5" />
+									<Palette size={14} weight="duotone" />
 									Color
 								</TabsTrigger>
 								<TabsTrigger value="gradient" className="gap-1.5 text-[11px]">
-									<Sparkles className="w-3.5 h-3.5" />
+									<Sparkle size={14} weight="duotone" />
 									Gradient
 								</TabsTrigger>
 							</TabsList>
@@ -435,9 +435,9 @@ export function SettingsPanel({
 									<Button
 										onClick={() => fileInputRef.current?.click()}
 										variant="outline"
-										className="w-full gap-2 bg-white/5 text-slate-200 border-white/10 hover:bg-[#34B27B] hover:text-white hover:border-[#34B27B] transition-all h-8 text-[11px]"
+										className="w-full gap-2 bg-white/5 text-slate-200 border-white/10 hover:bg-cc-accent hover:text-white hover:border-cc-accent transition-all h-8 text-[11px]"
 									>
-										<Upload className="w-3.5 h-3.5" />
+										<UploadSimple size={14} />
 										Upload Custom
 									</Button>
 
@@ -450,8 +450,8 @@ export function SettingsPanel({
 													className={cn(
 														"aspect-square w-9 h-9 rounded-md border-2 overflow-hidden cursor-pointer transition-all duration-200 relative group shadow-sm",
 														isSelected
-															? "border-[#34B27B] ring-1 ring-[#34B27B]/30"
-															: "border-white/10 hover:border-[#34B27B]/40 opacity-80 hover:opacity-100 bg-white/5",
+															? "border-cc-accent ring-1 ring-cc-accent/30"
+															: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
 													)}
 													style={{
 														backgroundImage: `url(${imageUrl})`,
@@ -465,7 +465,7 @@ export function SettingsPanel({
 														onClick={(e) => handleRemoveCustomImage(imageUrl, e)}
 														className="absolute top-0.5 right-0.5 w-3 h-3 bg-red-500/90 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
 													>
-														<X className="w-2 h-2 text-white" />
+														<X size={8} weight="bold" className="text-white" />
 													</button>
 												</div>
 											);
@@ -494,8 +494,8 @@ export function SettingsPanel({
 													className={cn(
 														"aspect-square w-9 h-9 rounded-md border-2 overflow-hidden cursor-pointer transition-all duration-200 shadow-sm",
 														isSelected
-															? "border-[#34B27B] ring-1 ring-[#34B27B]/30"
-															: "border-white/10 hover:border-[#34B27B]/40 opacity-80 hover:opacity-100 bg-white/5",
+															? "border-cc-accent ring-1 ring-cc-accent/30"
+															: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
 													)}
 													style={{
 														backgroundImage: `url(${path})`,
@@ -535,8 +535,8 @@ export function SettingsPanel({
 												className={cn(
 													"aspect-square w-9 h-9 rounded-md border-2 overflow-hidden cursor-pointer transition-all duration-200 shadow-sm",
 													gradient === g
-														? "border-[#34B27B] ring-1 ring-[#34B27B]/30"
-														: "border-white/10 hover:border-[#34B27B]/40 opacity-80 hover:opacity-100 bg-white/5",
+														? "border-cc-accent ring-1 ring-cc-accent/30"
+														: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
 												)}
 												style={{ background: g }}
 												aria-label={`Gradient ${idx + 1}`}
@@ -558,7 +558,7 @@ export function SettingsPanel({
 							<span className="text-[11px] font-medium text-slate-200">Zoom Level</span>
 							<div className="flex items-center gap-2">
 								{zoomEnabled && selectedZoomDepth && (
-									<span className="text-[10px] uppercase tracking-wider font-medium text-[#34B27B] bg-[#34B27B]/10 px-2 py-0.5 rounded-full">
+									<span className="text-[10px] uppercase tracking-wider font-medium text-cc-accent bg-cc-accent/10 px-2 py-0.5 rounded-full">
 										{ZOOM_DEPTH_OPTIONS.find((o) => o.depth === selectedZoomDepth)?.label}
 									</span>
 								)}
@@ -579,7 +579,7 @@ export function SettingsPanel({
 											"duration-200 ease-out",
 											zoomEnabled ? "opacity-100 cursor-pointer" : "opacity-40 cursor-not-allowed",
 											isActive
-												? "border-[#34B27B] bg-[#34B27B] text-white shadow-[#34B27B]/20"
+												? "border-cc-accent bg-cc-accent text-white shadow-cc-accent/20"
 												: "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10 hover:text-slate-200",
 										)}
 									>
@@ -600,7 +600,7 @@ export function SettingsPanel({
 								size="sm"
 								className="w-full gap-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30 transition-all h-8 text-xs"
 							>
-								<Trash2 className="w-3 h-3" />
+								<Trash size={12} />
 								Delete Zoom
 							</Button>
 						)}
@@ -611,7 +611,7 @@ export function SettingsPanel({
 								size="sm"
 								className="w-full gap-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30 transition-all h-8 text-xs"
 							>
-								<Trash2 className="w-3 h-3" />
+								<Trash size={12} />
 								Delete Trim Region
 							</Button>
 						)}
@@ -640,7 +640,7 @@ export function SettingsPanel({
 						className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-in fade-in duration-200"
 						onClick={() => setShowCropDropdown(false)}
 					/>
-					<div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[60] bg-[#09090b] rounded-2xl shadow-2xl border border-white/10 p-8 w-[90vw] max-w-5xl max-h-[90vh] overflow-auto animate-in zoom-in-95 duration-200">
+					<div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[60] bg-cc-surface-0 rounded-2xl shadow-2xl border border-white/10 p-8 w-[90vw] max-w-5xl max-h-[90vh] overflow-auto animate-in zoom-in-95 duration-200">
 						<div className="flex items-center justify-between mb-6">
 							<div>
 								<span className="text-xl font-bold text-slate-200">Crop Video</span>
@@ -654,7 +654,7 @@ export function SettingsPanel({
 								onClick={() => setShowCropDropdown(false)}
 								className="hover:bg-white/10 text-slate-400 hover:text-white"
 							>
-								<X className="w-5 h-5" />
+								<X size={20} weight="bold" />
 							</Button>
 						</div>
 						<CropControl
@@ -667,7 +667,7 @@ export function SettingsPanel({
 							<Button
 								onClick={() => setShowCropDropdown(false)}
 								size="lg"
-								className="bg-[#34B27B] hover:bg-[#34B27B]/90 text-white"
+								className="bg-cc-accent hover:bg-cc-accent/90 text-white"
 							>
 								Done
 							</Button>
@@ -683,11 +683,11 @@ export function SettingsPanel({
 						className={cn(
 							"flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border transition-all text-xs font-medium",
 							exportFormat === "mp4"
-								? "bg-[#34B27B]/10 border-[#34B27B]/50 text-white"
+								? "bg-cc-accent/10 border-cc-accent/50 text-white"
 								: "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200",
 						)}
 					>
-						<Film className="w-3.5 h-3.5" />
+						<FilmStrip size={14} />
 						MP4
 					</button>
 					<button
@@ -695,11 +695,11 @@ export function SettingsPanel({
 						className={cn(
 							"flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border transition-all text-xs font-medium",
 							exportFormat === "gif"
-								? "bg-[#34B27B]/10 border-[#34B27B]/50 text-white"
+								? "bg-cc-accent/10 border-cc-accent/50 text-white"
 								: "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200",
 						)}
 					>
-						<Image className="w-3.5 h-3.5" />
+						<Image size={14} />
 						GIF
 					</button>
 				</div>
@@ -787,7 +787,7 @@ export function SettingsPanel({
 								<Switch
 									checked={gifLoop}
 									onCheckedChange={onGifLoopChange}
-									className="data-[state=checked]:bg-[#34B27B] scale-75"
+									className="data-[state=checked]:bg-cc-accent scale-75"
 								/>
 							</div>
 						</div>
@@ -801,7 +801,7 @@ export function SettingsPanel({
 						onClick={onLoadProject}
 						className="h-8 text-[10px] font-medium gap-1.5 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
 					>
-						<FolderOpen className="w-3.5 h-3.5" />
+						<FolderOpen size={14} />
 						Load Project
 					</Button>
 					<Button
@@ -810,7 +810,7 @@ export function SettingsPanel({
 						onClick={onSaveProject}
 						className="h-8 text-[10px] font-medium gap-1.5 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
 					>
-						<Save className="w-3.5 h-3.5" />
+						<FloppyDisk size={14} />
 						Save Project
 					</Button>
 				</div>
@@ -819,9 +819,9 @@ export function SettingsPanel({
 					type="button"
 					size="lg"
 					onClick={onExport}
-					className="w-full py-5 text-sm font-semibold flex items-center justify-center gap-2 bg-[#34B27B] text-white rounded-xl shadow-lg shadow-[#34B27B]/20 hover:bg-[#34B27B]/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+					className="w-full py-5 text-sm font-semibold flex items-center justify-center gap-2 bg-cc-accent text-white rounded-xl shadow-lg shadow-cc-accent/20 hover:bg-cc-accent/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
 				>
-					<Download className="w-4 h-4" />
+					<DownloadSimple size={16} weight="bold" />
 					Export {exportFormat === "gif" ? "GIF" : "Video"}
 				</Button>
 
@@ -835,7 +835,7 @@ export function SettingsPanel({
 						}}
 						className="flex-1 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 hover:text-slate-300 py-1.5 transition-colors"
 					>
-						<Bug className="w-3 h-3 text-[#34B27B]" />
+						<Bug size={12} className="text-cc-accent" />
 						Report Bug
 					</button>
 					<button
@@ -845,7 +845,7 @@ export function SettingsPanel({
 						}}
 						className="flex-1 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 hover:text-slate-300 py-1.5 transition-colors"
 					>
-						<Star className="w-3 h-3 text-yellow-400" />
+						<Star size={12} weight="fill" className="text-yellow-400" />
 						Star on GitHub
 					</button>
 				</div>

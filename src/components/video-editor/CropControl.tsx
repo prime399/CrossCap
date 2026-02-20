@@ -177,7 +177,7 @@ export function CropControl({ videoElement, cropRegion, onCropChange }: CropCont
 				</div>
 
 				<div
-					className={cn("absolute h-[3px] cursor-ns-resize z-20 pointer-events-auto bg-[#34B27B]")}
+					className={cn("absolute h-[3px] cursor-ns-resize z-20 pointer-events-auto bg-cc-accent")}
 					style={{
 						left: `${cropPixelX}%`,
 						top: `${cropPixelY}%`,
@@ -190,7 +190,7 @@ export function CropControl({ videoElement, cropRegion, onCropChange }: CropCont
 				/>
 
 				<div
-					className={cn("absolute h-[3px] cursor-ns-resize z-20 pointer-events-auto bg-[#34B27B]")}
+					className={cn("absolute h-[3px] cursor-ns-resize z-20 pointer-events-auto bg-cc-accent")}
 					style={{
 						left: `${cropPixelX}%`,
 						top: `${cropPixelY + cropPixelHeight}%`,
@@ -203,7 +203,7 @@ export function CropControl({ videoElement, cropRegion, onCropChange }: CropCont
 				/>
 
 				<div
-					className={cn("absolute w-[3px] cursor-ew-resize z-20 pointer-events-auto bg-[#34B27B]")}
+					className={cn("absolute w-[3px] cursor-ew-resize z-20 pointer-events-auto bg-cc-accent")}
 					style={{
 						left: `${cropPixelX}%`,
 						top: `${cropPixelY}%`,
@@ -216,7 +216,7 @@ export function CropControl({ videoElement, cropRegion, onCropChange }: CropCont
 				/>
 
 				<div
-					className={cn("absolute w-[3px] cursor-ew-resize z-20 pointer-events-auto bg-[#34B27B]")}
+					className={cn("absolute w-[3px] cursor-ew-resize z-20 pointer-events-auto bg-cc-accent")}
 					style={{
 						left: `${cropPixelX + cropPixelWidth}%`,
 						top: `${cropPixelY}%`,

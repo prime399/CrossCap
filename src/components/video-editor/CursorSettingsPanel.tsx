@@ -26,7 +26,7 @@ const HIGHLIGHT_COLORS = [
 	"#E91E63",
 	"#9B59B6",
 	"#00BCD4",
-	"#34B27B",
+	"#f97316",
 	"#FFFFFF",
 ];
 
@@ -60,7 +60,7 @@ export function CursorSettingsPanel({
 					min={0.5}
 					max={3}
 					step={0.1}
-					className="w-full [&_[role=slider]]:bg-[#34B27B] [&_[role=slider]]:border-[#34B27B] [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
+					className="w-full [&_[role=slider]]:bg-cc-accent [&_[role=slider]]:border-cc-accent [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
 				/>
 			</div>
 
@@ -75,7 +75,7 @@ export function CursorSettingsPanel({
 					min={0}
 					max={100}
 					step={1}
-					className="w-full [&_[role=slider]]:bg-[#34B27B] [&_[role=slider]]:border-[#34B27B] [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
+					className="w-full [&_[role=slider]]:bg-cc-accent [&_[role=slider]]:border-cc-accent [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
 				/>
 			</div>
 
@@ -103,7 +103,7 @@ export function CursorSettingsPanel({
 				<Switch
 					checked={clickHighlight}
 					onCheckedChange={onClickHighlightChange}
-					className="data-[state=checked]:bg-[#34B27B] scale-90"
+					className="data-[state=checked]:bg-cc-accent scale-90"
 				/>
 			</div>
 		</div>

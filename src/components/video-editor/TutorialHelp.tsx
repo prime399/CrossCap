@@ -1,4 +1,4 @@
-import { ArrowRight, HelpCircle, Scissors } from "lucide-react";
+import { ArrowRight, Question, Scissors } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -18,14 +18,14 @@ export function TutorialHelp() {
 					size="sm"
 					className="h-7 px-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all gap-1.5"
 				>
-					<HelpCircle className="w-3.5 h-3.5" />
+					<Question size={14} />
 					<span className="font-medium">How trimming works</span>
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="max-w-2xl bg-[#09090b] border-white/10 [&>button]:text-slate-400 [&>button:hover]:text-white">
 				<DialogHeader>
 					<DialogTitle className="text-xl font-semibold text-slate-200 flex items-center gap-2">
-						<Scissors className="w-5 h-5 text-[#ef4444]" /> How Trimming Works
+						<Scissors size={20} className="text-[#ef4444]" /> How Trimming Works
 					</DialogTitle>
 					<DialogDescription className="text-slate-400">
 						Understanding how to cut out unwanted parts of your video.
@@ -76,7 +76,7 @@ export function TutorialHelp() {
 							<div className="absolute left-[90%] text-[10px] text-slate-400 font-medium">Kept</div>
 						</div>
 						<div className="flex justify-center mt-2">
-							<ArrowRight className="w-4 h-4 text-slate-600 rotate-90" />
+							<ArrowRight size={16} className="text-slate-600 rotate-90" />
 						</div>
 						{/* Result */}
 						<div className="relative h-12 bg-[#000] rounded-lg border border-white/10 flex items-center justify-center gap-1 px-4 select-none">

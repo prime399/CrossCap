@@ -1,4 +1,4 @@
-import { Film, Image } from "lucide-react";
+import { FilmStrip, Image } from "@phosphor-icons/react";
 import type { ExportFormat } from "@/lib/exporter/types";
 import { cn } from "@/lib/utils";
 
@@ -20,13 +20,13 @@ const formatOptions: FormatOption[] = [
 		value: "mp4",
 		label: "MP4 Video",
 		description: "High quality video file",
-		icon: <Film className="w-5 h-5" />,
+		icon: <FilmStrip size={20} />,
 	},
 	{
 		value: "gif",
 		label: "GIF Animation",
 		description: "Animated image for sharing",
-		icon: <Image className="w-5 h-5" />,
+		icon: <Image size={20} />,
 	},
 ];
 
@@ -47,9 +47,9 @@ export function FormatSelector({
 						onClick={() => onFormatChange(option.value)}
 						className={cn(
 							"relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-all duration-200",
-							"focus:outline-none focus:ring-2 focus:ring-[#34B27B]/50 focus:ring-offset-2 focus:ring-offset-[#09090b]",
+							"focus:outline-none focus:ring-2 focus:ring-cc-accent/50 focus:ring-offset-2 focus:ring-offset-cc-surface-0",
 							isSelected
-								? "bg-[#34B27B]/10 border-[#34B27B]/50 text-white"
+								? "bg-cc-accent/10 border-cc-accent/50 text-white"
 								: "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:border-white/20 hover:text-slate-200",
 							disabled && "opacity-50 cursor-not-allowed",
 						)}
@@ -57,7 +57,7 @@ export function FormatSelector({
 						<div
 							className={cn(
 								"w-10 h-10 rounded-full flex items-center justify-center transition-colors",
-								isSelected ? "bg-[#34B27B]/20 text-[#34B27B]" : "bg-white/5",
+								isSelected ? "bg-cc-accent/20 text-cc-accent" : "bg-white/5",
 							)}
 						>
 							{option.icon}
@@ -67,7 +67,7 @@ export function FormatSelector({
 							<div className="text-xs text-slate-500 mt-0.5">{option.description}</div>
 						</div>
 						{isSelected && (
-							<div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#34B27B]" />
+							<div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cc-accent" />
 						)}
 					</button>
 				);

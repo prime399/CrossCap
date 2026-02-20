@@ -14,7 +14,7 @@ export default function Row({ id, children, label, hint, isEmpty, labelColor = "
 
 	return (
 		<div
-			className="border-b border-[#18181b] bg-[#18181b] relative"
+			className="border-b border-cc-surface-1 bg-cc-surface-1 relative"
 			style={{ ...rowWrapperStyle, minHeight: 48, marginBottom: 4 }}
 		>
 			{label && (

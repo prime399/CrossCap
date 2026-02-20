@@ -1,4 +1,4 @@
-import { Download, Loader2, X } from "lucide-react";
+import { CircleNotch, DownloadSimple, X } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { ExportProgress } from "@/lib/exporter";
@@ -92,8 +92,8 @@ export function ExportDialog({
 					<div className="flex items-center gap-4">
 						{showSuccess ? (
 							<>
-								<div className="w-12 h-12 rounded-full bg-[#34B27B]/20 flex items-center justify-center ring-1 ring-[#34B27B]/50">
-									<Download className="w-6 h-6 text-[#34B27B]" />
+								<div className="w-12 h-12 rounded-full bg-cc-accent/20 flex items-center justify-center ring-1 ring-cc-accent/50">
+									<DownloadSimple size={24} weight="bold" className="text-cc-accent" />
 								</div>
 								<div>
 									<span className="text-xl font-bold text-slate-200 block">Export Complete</span>
@@ -105,12 +105,12 @@ export function ExportDialog({
 						) : (
 							<>
 								{isExporting ? (
-									<div className="w-12 h-12 rounded-full bg-[#34B27B]/10 flex items-center justify-center">
-										<Loader2 className="w-6 h-6 text-[#34B27B] animate-spin" />
+									<div className="w-12 h-12 rounded-full bg-cc-accent/10 flex items-center justify-center">
+										<CircleNotch size={24} weight="bold" className="text-cc-accent animate-spin" />
 									</div>
 								) : (
 									<div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-										<Download className="w-6 h-6 text-slate-200" />
+										<DownloadSimple size={24} weight="bold" className="text-slate-200" />
 									</div>
 								)}
 								<div>
@@ -127,7 +127,7 @@ export function ExportDialog({
 							onClick={onClose}
 							className="hover:bg-white/10 text-slate-400 hover:text-white rounded-full"
 						>
-							<X className="w-5 h-5" />
+							<X size={20} weight="bold" />
 						</Button>
 					)}
 				</div>
@@ -136,7 +136,7 @@ export function ExportDialog({
 					<div className="mb-6 animate-in slide-in-from-top-2">
 						<div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3">
 							<div className="p-1 bg-red-500/20 rounded-full">
-								<X className="w-3 h-3 text-red-400" />
+								<X size={12} weight="bold" className="text-red-400" />
 							</div>
 							<p className="text-sm text-red-400 leading-relaxed">{error}</p>
 						</div>
@@ -151,7 +151,7 @@ export function ExportDialog({
 								<span className="font-mono text-slate-200">
 									{isFinalizingMp4 ? (
 										<span className="flex items-center gap-2">
-											<Loader2 className="w-3 h-3 animate-spin" />
+											<CircleNotch size={12} weight="bold" className="animate-spin" />
 											Processing...
 										</span>
 									) : isCompiling || isFinalizing ? (
@@ -159,7 +159,7 @@ export function ExportDialog({
 											`${renderProgress}%`
 										) : (
 											<span className="flex items-center gap-2">
-												<Loader2 className="w-3 h-3 animate-spin" />
+												<CircleNotch size={12} weight="bold" className="animate-spin" />
 												Processing...
 											</span>
 										)
@@ -173,13 +173,13 @@ export function ExportDialog({
 									// Show render progress if available, otherwise animated indeterminate bar
 									renderProgress !== undefined && renderProgress > 0 ? (
 										<div
-											className="h-full bg-[#34B27B] shadow-[0_0_10px_rgba(52,178,123,0.3)] transition-all duration-300 ease-out"
+											className="h-full bg-cc-accent shadow-[0_0_10px_rgba(249,115,22,0.3)] transition-all duration-300 ease-out"
 											style={{ width: `${renderProgress}%` }}
 										/>
 									) : (
 										<div className="h-full w-full relative overflow-hidden">
 											<div
-												className="absolute h-full w-1/3 bg-[#34B27B] shadow-[0_0_10px_rgba(52,178,123,0.3)]"
+												className="absolute h-full w-1/3 bg-cc-accent shadow-[0_0_10px_rgba(249,115,22,0.3)]"
 												style={{
 													animation: "indeterminate 1.5s ease-in-out infinite",
 												}}
@@ -194,7 +194,7 @@ export function ExportDialog({
 									)
 								) : (
 									<div
-										className="h-full bg-[#34B27B] shadow-[0_0_10px_rgba(52,178,123,0.3)] transition-all duration-300 ease-out"
+										className="h-full bg-cc-accent shadow-[0_0_10px_rgba(249,115,22,0.3)] transition-all duration-300 ease-out"
 										style={{ width: `${Math.min(progress.percentage, 100)}%` }}
 									/>
 								)}

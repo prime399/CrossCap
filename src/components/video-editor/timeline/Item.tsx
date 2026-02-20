@@ -1,6 +1,6 @@
 import type { Span } from "dnd-timeline";
 import { useItem } from "dnd-timeline";
-import { MessageSquare, Scissors, ZoomIn } from "lucide-react";
+import { ChatText, MagnifyingGlassPlus, Scissors } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import glassStyles from "./ItemGlass.module.css";
@@ -56,12 +56,12 @@ export default function Item({
 	const isTrim = variant === "trim";
 
 	const glassClass = isZoom
-		? glassStyles.glassGreen
+		? glassStyles.glassBlue
 		: isTrim
 			? glassStyles.glassRed
-			: glassStyles.glassYellow;
+			: glassStyles.glassViolet;
 
-	const endCapColor = isZoom ? "#21916A" : isTrim ? "#ef4444" : "#B4A046";
+	const endCapColor = isZoom ? "#2563eb" : isTrim ? "#ef4444" : "#7c3aed";
 
 	const timeLabel = useMemo(
 		() => `${formatMs(span.start)} – ${formatMs(span.end)}`,
@@ -117,21 +117,21 @@ export default function Item({
 						<div className="flex items-center gap-1.5">
 							{isZoom ? (
 								<>
-									<ZoomIn className="w-3.5 h-3.5 shrink-0" />
+									<MagnifyingGlassPlus size={14} weight="bold" className="shrink-0" />
 									<span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">
 										{ZOOM_LABELS[zoomDepth] || `${zoomDepth}×`}
 									</span>
 								</>
 							) : isTrim ? (
 								<>
-									<Scissors className="w-3.5 h-3.5 shrink-0" />
+									<Scissors size={14} weight="bold" className="shrink-0" />
 									<span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">
 										Trim
 									</span>
 								</>
 							) : (
 								<>
-									<MessageSquare className="w-3.5 h-3.5 shrink-0" />
+									<ChatText size={14} weight="bold" className="shrink-0" />
 									<span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">
 										{children}
 									</span>

@@ -15,7 +15,7 @@ export function CursorToggle({ checked, onCheckedChange, className }: CursorTogg
 			onClick={() => onCheckedChange(!checked)}
 			className={cn(
 				"relative inline-flex h-7 w-14 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
-				checked ? "bg-[#34B27B]" : "bg-[#23232a]",
+				checked ? "bg-cc-accent" : "bg-[#23232a]",
 				className,
 			)}
 		>
@@ -23,7 +23,7 @@ export function CursorToggle({ checked, onCheckedChange, className }: CursorTogg
 				className={cn(
 					"pointer-events-none flex h-5 w-5 items-center justify-center rounded-full shadow-md transition-all duration-300",
 					checked
-						? "translate-x-8 bg-white shadow-[0_0_8px_rgba(52,178,123,0.4)]"
+						? "translate-x-8 bg-white shadow-[0_0_8px_rgba(249,115,22,0.4)]"
 						: "translate-x-1 bg-white/10 shadow-[0_0_6px_rgba(255,255,255,0.1)]",
 				)}
 				style={{
@@ -37,7 +37,7 @@ export function CursorToggle({ checked, onCheckedChange, className }: CursorTogg
 					fill="none"
 					className={cn(
 						"transition-all duration-300",
-						checked ? "text-[#34B27B] opacity-100 scale-100" : "text-slate-500 opacity-50 scale-90",
+						checked ? "text-cc-accent opacity-100 scale-100" : "text-slate-500 opacity-50 scale-90",
 					)}
 				>
 					<path
