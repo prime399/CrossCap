@@ -1,7 +1,6 @@
 import * as fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { calculateOutputDimensions } from "./gifExporter";
-import { GIF_SIZE_PRESETS, GifSizePreset } from "./types";
+import { calculateOutputDimensions, GIF_SIZE_PRESETS, GifSizePreset } from "./types";
 
 /**
  * Property 2: Loop Encoding Correctness

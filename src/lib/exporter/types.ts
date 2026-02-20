@@ -71,3 +71,29 @@ export const VALID_GIF_FRAME_RATES: readonly GifFrameRate[] = [15, 20, 25, 30] a
 export function isValidGifFrameRate(rate: number): rate is GifFrameRate {
 	return VALID_GIF_FRAME_RATES.includes(rate as GifFrameRate);
 }
+
+/**
+ * Calculate output dimensions for a given size preset, preserving aspect ratio.
+ */
+export function calculateOutputDimensions(
+	sourceWidth: number,
+	sourceHeight: number,
+	sizePreset: GifSizePreset,
+	sizePresets: typeof GIF_SIZE_PRESETS,
+): { width: number; height: number } {
+	const preset = sizePresets[sizePreset];
+	const maxHeight = preset.maxHeight;
+
+	if (sourceHeight <= maxHeight || sizePreset === "original") {
+		return { width: sourceWidth, height: sourceHeight };
+	}
+
+	const aspectRatio = sourceWidth / sourceHeight;
+	const newHeight = maxHeight;
+	const newWidth = Math.round(newHeight * aspectRatio);
+
+	return {
+		width: newWidth % 2 === 0 ? newWidth : newWidth + 1,
+		height: newHeight % 2 === 0 ? newHeight : newHeight + 1,
+	};
+}

@@ -188,6 +188,7 @@ export interface VideoEditorExport {
 export interface VideoEditorRegions {
 	zoomRegions: ZoomRegion[];
 	trimRegions: TrimRegion[];
+	annotationRegions: AnnotationRegion[];
 	cropRegion: CropRegion;
 }
 
@@ -234,6 +235,7 @@ export const DEFAULT_VIDEO_EDITOR_EXPORT: VideoEditorExport = {
 export const DEFAULT_VIDEO_EDITOR_REGIONS: VideoEditorRegions = {
 	zoomRegions: [],
 	trimRegions: [],
+	annotationRegions: [],
 	cropRegion: DEFAULT_CROP_REGION,
 };
 

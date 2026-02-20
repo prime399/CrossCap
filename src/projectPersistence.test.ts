@@ -1,3 +1,4 @@
+import type { BrowserWindow } from "electron";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
 vi.mock("../electron/main", () => ({
@@ -42,8 +43,10 @@ import { registerIpcHandlers } from "../electron/ipc/handlers";
 describe("project save/load handlers", () => {
 	const setupHandlers = () => {
 		registerIpcHandlers(
-			() => {},
-			() => ({ close: vi.fn(), focus: vi.fn() }) as any,
+			() => {
+				/* noop for test */
+			},
+			() => ({ close: vi.fn(), focus: vi.fn() }) as unknown as BrowserWindow,
 			() => null,
 			() => null,
 		);
@@ -51,11 +54,11 @@ describe("project save/load handlers", () => {
 
 	const getRegisteredHandler = (channel: string) => {
 		const calls = (ipcMain.handle as unknown as Mock).mock.calls;
-		const match = calls.find(([name]) => name === channel);
+		const match = calls.find(([name]: [string]) => name === channel);
 		if (!match) {
 			throw new Error(`Handler not found for channel: ${channel}`);
 		}
-		return match[1] as (...args: any[]) => Promise<any>;
+		return match[1] as (...args: unknown[]) => Promise<unknown>;
 	};
 
 	beforeEach(() => {
@@ -69,15 +72,20 @@ describe("project save/load handlers", () => {
 
 		(fs.writeFile as unknown as Mock).mockResolvedValue(undefined);
 
-		const result = await saveHandler({}, projectData, "project-name", "/tmp/current.crosscap");
+		const result = await saveHandler(
+			{},
+			projectData,
+			"project-name",
+			"/recordings/current.crosscap",
+		);
 
 		expect(dialog.showSaveDialog).not.toHaveBeenCalled();
 		expect(fs.writeFile).toHaveBeenCalledWith(
-			"/tmp/current.crosscap",
+			"/recordings/current.crosscap",
 			JSON.stringify(projectData, null, 2),
 			"utf-8",
 		);
-		expect(result).toMatchObject({ success: true, path: "/tmp/current.crosscap" });
+		expect(result).toMatchObject({ success: true, path: "/recordings/current.crosscap" });
 	});
 
 	it("uses save dialog when no existing project path is provided", async () => {

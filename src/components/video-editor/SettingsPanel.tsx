@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GRADIENTS } from "@/constants/gradients";
+import { WALLPAPER_RELATIVE } from "@/constants/wallpapers";
 import { getAssetPath } from "@/lib/assetPath";
 import type { ExportFormat, ExportQuality, GifFrameRate, GifSizePreset } from "@/lib/exporter";
 import { GIF_FRAME_RATES, GIF_SIZE_PRESETS } from "@/lib/exporter";
@@ -31,39 +33,7 @@ import { AnnotationSettingsPanel } from "./AnnotationSettingsPanel";
 import { CropControl } from "./CropControl";
 import { CursorSettingsPanel } from "./CursorSettingsPanel";
 import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
-import type { AnnotationRegion, AnnotationType, CropRegion, ZoomDepth } from "./types";
-
-const WALLPAPER_COUNT = 18;
-const WALLPAPER_RELATIVE = Array.from(
-	{ length: WALLPAPER_COUNT },
-	(_, i) => `wallpapers/wallpaper${i + 1}.jpg`,
-);
-const GRADIENTS = [
-	"linear-gradient( 111.6deg,  rgba(114,167,232,1) 9.4%, rgba(253,129,82,1) 43.9%, rgba(253,129,82,1) 54.8%, rgba(249,202,86,1) 86.3% )",
-	"linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%)",
-	"radial-gradient( circle farthest-corner at 3.2% 49.6%,  rgba(80,12,139,0.87) 0%, rgba(161,10,144,0.72) 83.6% )",
-	"linear-gradient( 111.6deg,  rgba(0,56,68,1) 0%, rgba(163,217,185,1) 51.5%, rgba(231, 148, 6, 1) 88.6% )",
-	"linear-gradient( 107.7deg,  rgba(235,230,44,0.55) 8.4%, rgba(252,152,15,1) 90.3% )",
-	"linear-gradient( 91deg,  rgba(72,154,78,1) 5.2%, rgba(251,206,70,1) 95.9% )",
-	"radial-gradient( circle farthest-corner at 10% 20%,  rgba(2,37,78,1) 0%, rgba(4,56,126,1) 19.7%, rgba(85,245,221,1) 100.2% )",
-	"linear-gradient( 109.6deg,  rgba(15,2,2,1) 11.2%, rgba(36,163,190,1) 91.1% )",
-	"linear-gradient(135deg, #FBC8B4, #2447B1)",
-	"linear-gradient(109.6deg, #F635A6, #36D860)",
-	"linear-gradient(90deg, #FF0101, #4DFF01)",
-	"linear-gradient(315deg, #EC0101, #5044A9)",
-	"linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%)",
-	"linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%)",
-	"linear-gradient(to right, #ff8177 0%, #ff867a 0%, #ff8c7f 21%, #f99185 52%, #cf556c 78%, #b12a5b 100%)",
-	"linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)",
-	"linear-gradient(to right, #4facfe 0%, #00f2fe 100%)",
-	"linear-gradient(to top, #fcc5e4 0%, #fda34b 15%, #ff7882 35%, #c8699e 52%, #7046aa 71%, #0c1db8 87%, #020f75 100%)",
-	"linear-gradient(to right, #fa709a 0%, #fee140 100%)",
-	"linear-gradient(to top, #30cfd0 0%, #330867 100%)",
-	"linear-gradient(to top, #c471f5 0%, #fa71cd 100%)",
-	"linear-gradient(to right, #f78ca0 0%, #f9748f 19%, #fd868c 60%, #fe9a8b 100%)",
-	"linear-gradient(to top, #48c6ef 0%, #6f86d6 100%)",
-	"linear-gradient(to right, #0acffe 0%, #495aff 100%)",
-];
+import type { AnnotationRegion, AnnotationType, CropRegion, FigureData, ZoomDepth } from "./types";
 
 interface SettingsPanelProps {
 	selected: string;
@@ -108,7 +78,7 @@ interface SettingsPanelProps {
 	onAnnotationContentChange?: (id: string, content: string) => void;
 	onAnnotationTypeChange?: (id: string, type: AnnotationType) => void;
 	onAnnotationStyleChange?: (id: string, style: Partial<AnnotationRegion["style"]>) => void;
-	onAnnotationFigureDataChange?: (id: string, figureData: any) => void;
+	onAnnotationFigureDataChange?: (id: string, figureData: FigureData) => void;
 	onAnnotationDelete?: (id: string) => void;
 	customImages?: string[];
 	onCustomImageAdd?: (imageUrl: string) => void;
@@ -126,8 +96,6 @@ interface SettingsPanelProps {
 	clickHighlightColor?: string;
 	onClickHighlightColorChange?: (v: string) => void;
 }
-
-export default SettingsPanel;
 
 const ZOOM_DEPTH_OPTIONS: Array<{ depth: ZoomDepth; label: string }> = [
 	{ depth: 1, label: "1.25×" },
@@ -207,7 +175,7 @@ export function SettingsPanel({
 			try {
 				const resolved = await Promise.all(WALLPAPER_RELATIVE.map((p) => getAssetPath(p)));
 				if (mounted) setWallpaperPaths(resolved);
-			} catch (err) {
+			} catch {
 				if (mounted) setWallpaperPaths(WALLPAPER_RELATIVE.map((p) => `/${p}`));
 			}
 		})();
@@ -515,7 +483,9 @@ export function SettingsPanel({
 														s.replace(/^file:\/\//, "").replace(/^\//, "");
 													if (clean(selected).endsWith(clean(path))) return true;
 													if (clean(path).endsWith(clean(selected))) return true;
-												} catch {}
+												} catch {
+													// path comparison failed, treat as non-match
+												}
 												return false;
 											})();
 											return (

@@ -79,7 +79,11 @@ function registerIpcHandlers(createEditorWindow2, createSourceSelectorWindow2, g
   });
   ipcMain.handle("store-recorded-video", async (_, videoData, fileName) => {
     try {
-      const videoPath = path.join(RECORDINGS_DIR, fileName);
+      const sanitized = path.basename(fileName);
+      if (sanitized !== fileName || fileName.includes("..")) {
+        return { success: false, message: "Invalid file name" };
+      }
+      const videoPath = path.join(RECORDINGS_DIR, sanitized);
       await fs.writeFile(videoPath, Buffer.from(videoData));
       currentVideoPath = videoPath;
       const telemetryPath = `${videoPath}.cursor.json`;
@@ -177,6 +181,10 @@ function registerIpcHandlers(createEditorWindow2, createSourceSelectorWindow2, g
   });
   ipcMain.handle("open-external-url", async (_, url) => {
     try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        return { success: false, error: `Blocked URL scheme: ${parsed.protocol}` };
+      }
       await shell.openExternal(url);
       return { success: true };
     } catch (error) {
@@ -259,7 +267,13 @@ function registerIpcHandlers(createEditorWindow2, createSourceSelectorWindow2, g
     async (_, projectData, suggestedName, existingProjectPath) => {
       try {
         if (existingProjectPath) {
-          await fs.writeFile(existingProjectPath, JSON.stringify(projectData, null, 2), "utf-8");
+          const resolved = path.resolve(existingProjectPath);
+          const recordingsResolved = path.resolve(RECORDINGS_DIR);
+          const homeDir = app.getPath("home");
+          if (!resolved.startsWith(recordingsResolved) && !resolved.startsWith(homeDir)) {
+            return { success: false, message: "Project path outside allowed directories" };
+          }
+          await fs.writeFile(resolved, JSON.stringify(projectData, null, 2), "utf-8");
           return {
             success: true,
             path: existingProjectPath,
