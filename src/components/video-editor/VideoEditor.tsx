@@ -90,6 +90,7 @@ export default function VideoEditor() {
 		updateExport,
 		updateRegions,
 		updateUI,
+		updateCursor,
 	} = useSettingsPersistence();
 
 	const [wallpaper, setWallpaperState] = useState<string>(settings.background.value);
@@ -123,6 +124,13 @@ export default function VideoEditor() {
 	const [activeBackgroundTab, setActiveBackgroundTabState] = useState<
 		"image" | "color" | "gradient"
 	>(settings.ui.activeBackgroundTab);
+	const [cursorEnabled, setCursorEnabledState] = useState(settings.cursor.enabled);
+	const [cursorSize, setCursorSizeState] = useState(settings.cursor.size);
+	const [cursorSmoothing, setCursorSmoothingState] = useState(settings.cursor.smoothing);
+	const [clickHighlight, setClickHighlightState] = useState(settings.cursor.clickHighlight);
+	const [clickHighlightColor, setClickHighlightColorState] = useState(
+		settings.cursor.clickHighlightColor,
+	);
 
 	const videoPlaybackRef = useRef<VideoPlaybackRef>(null);
 	const nextZoomIdRef = useRef(1);
@@ -253,6 +261,46 @@ export default function VideoEditor() {
 			updateUI({ activeBackgroundTab: value });
 		},
 		[updateUI],
+	);
+
+	const setCursorEnabled = useCallback(
+		(value: boolean) => {
+			setCursorEnabledState(value);
+			updateCursor({ enabled: value });
+		},
+		[updateCursor],
+	);
+
+	const setCursorSize = useCallback(
+		(value: number) => {
+			setCursorSizeState(value);
+			updateCursor({ size: value });
+		},
+		[updateCursor],
+	);
+
+	const setCursorSmoothing = useCallback(
+		(value: number) => {
+			setCursorSmoothingState(value);
+			updateCursor({ smoothing: value });
+		},
+		[updateCursor],
+	);
+
+	const setClickHighlight = useCallback(
+		(value: boolean) => {
+			setClickHighlightState(value);
+			updateCursor({ clickHighlight: value });
+		},
+		[updateCursor],
+	);
+
+	const setClickHighlightColor = useCallback(
+		(value: string) => {
+			setClickHighlightColorState(value);
+			updateCursor({ clickHighlightColor: value });
+		},
+		[updateCursor],
 	);
 
 	// Helper to convert file path to proper file:// URL
@@ -746,6 +794,11 @@ export default function VideoEditor() {
 			setGifLoopState(settings.export.gifLoop);
 			setGifSizePresetState(settings.export.gifSizePreset);
 			setActiveBackgroundTabState(settings.ui.activeBackgroundTab);
+			setCursorEnabledState(settings.cursor.enabled);
+			setCursorSizeState(settings.cursor.size);
+			setCursorSmoothingState(settings.cursor.smoothing);
+			setClickHighlightState(settings.cursor.clickHighlight);
+			setClickHighlightColorState(settings.cursor.clickHighlightColor);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isSettingsLoaded]);
@@ -1623,6 +1676,16 @@ export default function VideoEditor() {
 										onCustomImageRemove={removeCustomImage}
 										activeBackgroundTab={activeBackgroundTab}
 										onActiveBackgroundTabChange={setActiveBackgroundTab}
+										cursorEnabled={cursorEnabled}
+										onCursorEnabledChange={setCursorEnabled}
+										cursorSize={cursorSize}
+										onCursorSizeChange={setCursorSize}
+										cursorSmoothing={cursorSmoothing}
+										onCursorSmoothingChange={setCursorSmoothing}
+										clickHighlight={clickHighlight}
+										onClickHighlightChange={setClickHighlight}
+										clickHighlightColor={clickHighlightColor}
+										onClickHighlightColorChange={setClickHighlightColor}
 									/>
 								</div>
 							</div>

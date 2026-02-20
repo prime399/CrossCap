@@ -6,6 +6,7 @@ import {
 	Film,
 	FolderOpen,
 	Image,
+	MousePointer,
 	Palette,
 	Save,
 	Search,
@@ -28,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { type AspectRatio } from "@/utils/aspectRatioUtils";
 import { AnnotationSettingsPanel } from "./AnnotationSettingsPanel";
 import { CropControl } from "./CropControl";
+import { CursorSettingsPanel } from "./CursorSettingsPanel";
 import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
 import type { AnnotationRegion, AnnotationType, CropRegion, ZoomDepth } from "./types";
 
@@ -113,6 +115,16 @@ interface SettingsPanelProps {
 	onCustomImageRemove?: (imageUrl: string) => void;
 	activeBackgroundTab?: "image" | "color" | "gradient";
 	onActiveBackgroundTabChange?: (tab: "image" | "color" | "gradient") => void;
+	cursorEnabled?: boolean;
+	onCursorEnabledChange?: (v: boolean) => void;
+	cursorSize?: number;
+	onCursorSizeChange?: (v: number) => void;
+	cursorSmoothing?: number;
+	onCursorSmoothingChange?: (v: number) => void;
+	clickHighlight?: boolean;
+	onClickHighlightChange?: (v: boolean) => void;
+	clickHighlightColor?: string;
+	onClickHighlightColorChange?: (v: string) => void;
 }
 
 export default SettingsPanel;
@@ -175,6 +187,16 @@ export function SettingsPanel({
 	onCustomImageRemove,
 	activeBackgroundTab = "image",
 	onActiveBackgroundTabChange,
+	cursorEnabled,
+	onCursorEnabledChange,
+	cursorSize,
+	onCursorSizeChange,
+	cursorSmoothing,
+	onCursorSmoothingChange,
+	clickHighlight,
+	onClickHighlightChange,
+	clickHighlightColor,
+	onClickHighlightColorChange,
 }: SettingsPanelProps) {
 	const [wallpaperPaths, setWallpaperPaths] = useState<string[]>([]);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -313,7 +335,7 @@ export function SettingsPanel({
 		<div className="flex-[2] min-w-0 bg-[#09090b]/80 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col shadow-2xl shadow-black/50 h-full overflow-hidden">
 			<div className="flex-1 overflow-y-auto custom-scrollbar p-3 pb-0">
 				<Tabs value={activeSettingsTab} onValueChange={setActiveSettingsTab} className="w-full">
-					<TabsList className="mb-3 w-full grid grid-cols-3 h-9 rounded-xl p-1">
+					<TabsList className="mb-3 w-full grid grid-cols-4 h-9 rounded-xl p-1">
 						<TabsTrigger value="effects" className="gap-1.5 text-[11px]">
 							<Sparkles className="w-3.5 h-3.5" />
 							Effects
@@ -325,6 +347,10 @@ export function SettingsPanel({
 						<TabsTrigger value="zoom" className="gap-1.5 text-[11px]">
 							<Search className="w-3.5 h-3.5" />
 							Zoom
+						</TabsTrigger>
+						<TabsTrigger value="cursor" className="gap-1.5 text-[11px]">
+							<MousePointer className="w-3.5 h-3.5" />
+							Cursor
 						</TabsTrigger>
 					</TabsList>
 
@@ -619,6 +645,21 @@ export function SettingsPanel({
 								Delete Trim Region
 							</Button>
 						)}
+					</TabsContent>
+
+					<TabsContent value="cursor" className="mt-0">
+						<CursorSettingsPanel
+							cursorEnabled={cursorEnabled}
+							onCursorEnabledChange={onCursorEnabledChange}
+							cursorSize={cursorSize}
+							onCursorSizeChange={onCursorSizeChange}
+							cursorSmoothing={cursorSmoothing}
+							onCursorSmoothingChange={onCursorSmoothingChange}
+							clickHighlight={clickHighlight}
+							onClickHighlightChange={onClickHighlightChange}
+							clickHighlightColor={clickHighlightColor}
+							onClickHighlightColorChange={onClickHighlightColorChange}
+						/>
 					</TabsContent>
 				</Tabs>
 			</div>

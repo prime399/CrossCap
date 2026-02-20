@@ -153,6 +153,22 @@ export interface VideoEditorEffects {
 	padding: number;
 }
 
+export interface VideoEditorCursor {
+	enabled: boolean;
+	size: number;
+	smoothing: number;
+	clickHighlight: boolean;
+	clickHighlightColor: string;
+}
+
+export const DEFAULT_VIDEO_EDITOR_CURSOR: VideoEditorCursor = {
+	enabled: true,
+	size: 1,
+	smoothing: 0,
+	clickHighlight: false,
+	clickHighlightColor: "#FFCC00",
+};
+
 export interface VideoEditorBackground {
 	type: "image" | "color" | "gradient";
 	value: string;
@@ -188,6 +204,7 @@ export interface VideoEditorSettings {
 	export: VideoEditorExport;
 	regions: VideoEditorRegions;
 	ui: VideoEditorUI;
+	cursor: VideoEditorCursor;
 }
 
 export const DEFAULT_VIDEO_EDITOR_EFFECTS: VideoEditorEffects = {
@@ -233,6 +250,7 @@ export const DEFAULT_VIDEO_EDITOR_SETTINGS: VideoEditorSettings = {
 	export: DEFAULT_VIDEO_EDITOR_EXPORT,
 	regions: DEFAULT_VIDEO_EDITOR_REGIONS,
 	ui: DEFAULT_VIDEO_EDITOR_UI,
+	cursor: DEFAULT_VIDEO_EDITOR_CURSOR,
 };
 
 export const SETTINGS_STORAGE_KEY = "crosscap_video_editor_settings";

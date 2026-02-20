@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
 	VideoEditorBackground,
+	VideoEditorCursor,
 	VideoEditorEffects,
 	VideoEditorExport,
 	VideoEditorRegions,
@@ -18,6 +19,7 @@ type PartialSettings = {
 	export?: Partial<VideoEditorExport>;
 	regions?: Partial<VideoEditorRegions>;
 	ui?: Partial<VideoEditorUI>;
+	cursor?: Partial<VideoEditorCursor>;
 };
 
 function migrateSettings(stored: unknown): VideoEditorSettings {
@@ -58,6 +60,10 @@ function migrateSettings(stored: unknown): VideoEditorSettings {
 		ui: {
 			...DEFAULT_VIDEO_EDITOR_SETTINGS.ui,
 			...storedSettings.ui,
+		},
+		cursor: {
+			...DEFAULT_VIDEO_EDITOR_SETTINGS.cursor,
+			...storedSettings.cursor,
 		},
 	};
 }
@@ -136,6 +142,9 @@ export function useSettingsPersistence() {
 				if (update.ui) {
 					newSettings.ui = { ...prev.ui, ...update.ui };
 				}
+				if (update.cursor) {
+					newSettings.cursor = { ...prev.cursor, ...update.cursor };
+				}
 
 				if (saveTimeoutRef.current) {
 					clearTimeout(saveTimeoutRef.current);
@@ -186,6 +195,13 @@ export function useSettingsPersistence() {
 		[updateSettings],
 	);
 
+	const updateCursor = useCallback(
+		(cursor: Partial<VideoEditorCursor>) => {
+			updateSettings({ cursor });
+		},
+		[updateSettings],
+	);
+
 	const resetSettings = useCallback(() => {
 		setSettings(DEFAULT_VIDEO_EDITOR_SETTINGS);
 		try {
@@ -213,6 +229,7 @@ export function useSettingsPersistence() {
 		updateExport,
 		updateRegions,
 		updateUI,
+		updateCursor,
 		resetSettings,
 	};
 }
@@ -240,4 +257,9 @@ export function useRegionsSettings() {
 export function useUISettings() {
 	const { settings, updateUI, isLoaded } = useSettingsPersistence();
 	return { ui: settings.ui, updateUI, isLoaded };
+}
+
+export function useCursorSettings() {
+	const { settings, updateCursor, isLoaded } = useSettingsPersistence();
+	return { cursor: settings.cursor, updateCursor, isLoaded };
 }
