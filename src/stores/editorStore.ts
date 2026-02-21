@@ -593,6 +593,22 @@ export const useEditorStore = create<EditorStore>()(
 				ui: state.ui,
 				cursor: state.cursor,
 			}),
+			onRehydrateStorage: () => (state) => {
+				if (!state) return;
+				const { zoomRegions, trimRegions, annotationRegions } = state.regions;
+				state.nextZoomId = deriveNextId(
+					"zoom",
+					zoomRegions.map((r) => r.id),
+				);
+				state.nextTrimId = deriveNextId(
+					"trim",
+					trimRegions.map((r) => r.id),
+				);
+				state.nextAnnotationId = deriveNextId(
+					"annotation",
+					annotationRegions.map((r) => r.id),
+				);
+			},
 			migrate: (persisted, version) => {
 				if (version === 0 || !persisted || typeof persisted !== "object") {
 					return {
