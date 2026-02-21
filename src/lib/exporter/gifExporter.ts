@@ -170,6 +170,8 @@ export class GifExporter {
 					percentage: 100,
 					estimatedTimeRemaining: 0,
 					phase: "finalizing",
+					renderProgress: 0,
+					phaseDetail: "Preparing GIF encoder",
 				});
 			}
 
@@ -189,6 +191,7 @@ export class GifExporter {
 							estimatedTimeRemaining: 0,
 							phase: "finalizing",
 							renderProgress: Math.round(progress * 100),
+							phaseDetail: "Encoding GIF frames",
 						});
 					}
 				});

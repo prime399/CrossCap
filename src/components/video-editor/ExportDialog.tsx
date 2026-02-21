@@ -55,22 +55,29 @@ export function ExportDialog({
 
 	// Determine if we're in the compiling/finalizing phase
 	const isFinalizing = progress?.phase === "finalizing";
-	const isCompiling =
-		isExporting && progress && progress.percentage >= 100 && exportFormat === "gif";
+	const isCompiling = isExporting && progress && isFinalizing && exportFormat === "gif";
 	const isFinalizingMp4 = isExporting && isFinalizing && exportFormat === "mp4";
-	const renderProgress = progress?.renderProgress;
+	const renderProgress =
+		typeof progress?.renderProgress === "number"
+			? Math.max(0, Math.min(100, progress.renderProgress))
+			: undefined;
+	const frameProgress =
+		typeof progress?.percentage === "number" ? Math.max(0, Math.min(100, progress.percentage)) : 0;
+	const visibleProgress = isFinalizing ? (renderProgress ?? frameProgress) : frameProgress;
+	const statusDetail = progress?.phaseDetail;
 
 	// Get status message based on phase
 	const getStatusMessage = () => {
 		if (error) return "Please try again";
-		if (isFinalizingMp4) return "Finalizing video...";
+		if (isFinalizingMp4) return statusDetail || "Finalizing video...";
 		if (isCompiling || isFinalizing) {
-			if (renderProgress !== undefined && renderProgress > 0) {
-				return `Compiling GIF... ${renderProgress}%`;
+			if (renderProgress !== undefined) {
+				return `${statusDetail || "Compiling GIF"}... ${renderProgress}%`;
 			}
-			return "Compiling GIF... This may take a while";
+			return `${statusDetail || "Compiling GIF"}...`;
 		}
-		return "This may take a moment...";
+		if (progress) return statusDetail || "Rendering frames...";
+		return "Preparing export...";
 	};
 
 	// Get title based on phase
@@ -143,61 +150,26 @@ export function ExportDialog({
 					</div>
 				)}
 
-				{isExporting && progress && (
+				{isExporting && (
 					<div className="space-y-6">
 						<div className="space-y-2">
 							<div className="flex justify-between text-xs font-medium text-slate-400 uppercase tracking-wider">
-								<span>{isFinalizingMp4 ? "Finalizing" : isCompiling || isFinalizing ? "Compiling" : "Rendering Frames"}</span>
+								<span>
+									{isFinalizingMp4
+										? "Finalizing"
+										: isCompiling || isFinalizing
+											? "Compiling"
+											: "Rendering Frames"}
+								</span>
 								<span className="font-mono text-slate-200">
-									{isFinalizingMp4 ? (
-										<span className="flex items-center gap-2">
-											<CircleNotch size={12} weight="bold" className="animate-spin" />
-											Processing...
-										</span>
-									) : isCompiling || isFinalizing ? (
-										renderProgress !== undefined && renderProgress > 0 ? (
-											`${renderProgress}%`
-										) : (
-											<span className="flex items-center gap-2">
-												<CircleNotch size={12} weight="bold" className="animate-spin" />
-												Processing...
-											</span>
-										)
-									) : (
-										`${progress.percentage.toFixed(0)}%`
-									)}
+									{`${Math.round(visibleProgress)}%`}
 								</span>
 							</div>
 							<div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
-								{isFinalizingMp4 || isCompiling || isFinalizing ? (
-									// Show render progress if available, otherwise animated indeterminate bar
-									renderProgress !== undefined && renderProgress > 0 ? (
-										<div
-											className="h-full bg-cc-accent shadow-[0_0_10px_rgba(249,115,22,0.3)] transition-all duration-300 ease-out"
-											style={{ width: `${renderProgress}%` }}
-										/>
-									) : (
-										<div className="h-full w-full relative overflow-hidden">
-											<div
-												className="absolute h-full w-1/3 bg-cc-accent shadow-[0_0_10px_rgba(249,115,22,0.3)]"
-												style={{
-													animation: "indeterminate 1.5s ease-in-out infinite",
-												}}
-											/>
-											<style>{`
-                        @keyframes indeterminate {
-                          0% { transform: translateX(-100%); }
-                          100% { transform: translateX(400%); }
-                        }
-                      `}</style>
-										</div>
-									)
-								) : (
-									<div
-										className="h-full bg-cc-accent shadow-[0_0_10px_rgba(249,115,22,0.3)] transition-all duration-300 ease-out"
-										style={{ width: `${Math.min(progress.percentage, 100)}%` }}
-									/>
-								)}
+								<div
+									className="h-full bg-cc-accent shadow-[0_0_10px_rgba(249,115,22,0.3)] transition-all duration-300 ease-out"
+									style={{ width: `${visibleProgress}%` }}
+								/>
 							</div>
 						</div>
 
@@ -207,7 +179,11 @@ export function ExportDialog({
 									{isFinalizingMp4 || isCompiling || isFinalizing ? "Status" : "Format"}
 								</div>
 								<div className="text-slate-200 font-medium text-sm">
-									{isFinalizingMp4 ? "Finalizing..." : isCompiling || isFinalizing ? "Compiling..." : formatLabel}
+									{isFinalizingMp4
+										? "Finalizing..."
+										: isCompiling || isFinalizing
+											? "Compiling..."
+											: formatLabel}
 								</div>
 							</div>
 							<div className="bg-white/5 rounded-xl p-3 border border-white/5">
@@ -215,7 +191,7 @@ export function ExportDialog({
 									Frames
 								</div>
 								<div className="text-slate-200 font-medium text-sm">
-									{progress.currentFrame} / {progress.totalFrames}
+									{progress ? `${progress.currentFrame} / ${progress.totalFrames}` : "0 / 0"}
 								</div>
 							</div>
 						</div>

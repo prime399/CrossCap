@@ -197,7 +197,7 @@ export class VideoExporter {
 			}
 
 			// --- Finalizing phase: flush encoder, encode audio, mux ---
-			const reportFinalizing = (step: string) => {
+			const reportFinalizing = (step: string, finalizingProgress: number) => {
 				console.log(`[VideoExporter] Finalizing: ${step}`);
 				if (this.config.onProgress) {
 					this.config.onProgress({
@@ -206,11 +206,13 @@ export class VideoExporter {
 						percentage: 100,
 						estimatedTimeRemaining: 0,
 						phase: "finalizing",
+						renderProgress: finalizingProgress,
+						phaseDetail: step,
 					});
 				}
 			};
 
-			reportFinalizing("flushing video encoder");
+			reportFinalizing("Flushing video encoder", 20);
 			if (this.encoder && this.encoder.state === "configured") {
 				await this.encoder.flush();
 			}
@@ -218,7 +220,7 @@ export class VideoExporter {
 
 			if (audioTrack && !this.cancelled) {
 				try {
-					reportFinalizing("encoding audio track");
+					reportFinalizing("Encoding audio track", 45);
 					await this.encodeAudioTrack(audioTrack);
 					console.log("[VideoExporter] Audio track encoded");
 				} catch (audioError) {
@@ -229,14 +231,15 @@ export class VideoExporter {
 				}
 			}
 
-			reportFinalizing("waiting for muxing to complete");
+			reportFinalizing("Muxing tracks", 75);
 			console.log(`[VideoExporter] Waiting for ${this.muxingPromises.length} muxing ops`);
 			await Promise.all(this.muxingPromises);
 			console.log("[VideoExporter] All muxing operations complete");
 
-			reportFinalizing("writing MP4 container");
+			reportFinalizing("Writing MP4 container", 92);
 			const blob = await this.muxer!.finalize();
 			console.log(`[VideoExporter] Export done — ${(blob.size / 1024 / 1024).toFixed(1)} MB`);
+			reportFinalizing("Done", 100);
 
 			return { success: true, blob };
 		} catch (error) {
@@ -263,7 +266,11 @@ export class VideoExporter {
 				// Capture decoder config metadata from encoder output
 				if (meta?.decoderConfig?.description && !videoDescription) {
 					const desc = meta.decoderConfig.description;
-					videoDescription = new Uint8Array(desc instanceof ArrayBuffer ? desc : (desc as any));
+					if (ArrayBuffer.isView(desc)) {
+						videoDescription = new Uint8Array(desc.buffer, desc.byteOffset, desc.byteLength);
+					} else {
+						videoDescription = new Uint8Array(desc);
+					}
 					this.videoDescription = videoDescription;
 				}
 				// Capture colorSpace from encoder metadata if provided

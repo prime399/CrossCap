@@ -579,7 +579,14 @@ export default function VideoEditor() {
 			}
 
 			store.setIsExporting(true);
-			store.setExportProgress(null);
+			store.setExportProgress({
+				currentFrame: 0,
+				totalFrames: 1,
+				percentage: 0,
+				estimatedTimeRemaining: 0,
+				phase: "extracting",
+				phaseDetail: "Preparing export",
+			});
 			store.setExportError(null);
 
 			try {
