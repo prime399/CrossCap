@@ -362,6 +362,10 @@ export class VideoExporter {
 				})();
 
 				this.muxingPromises.push(muxingPromise);
+				// Prune settled promises periodically to avoid unbounded growth
+				if (this.muxingPromises.length > 100) {
+					this.pruneMuxingPromises();
+				}
 				this.encodeQueue--;
 			},
 			error: (error) => {
@@ -411,6 +415,15 @@ export class VideoExporter {
 		}
 		// Don't call cleanup() here — let the export() finally block handle it.
 		// Calling cleanup() while flush() is pending causes undefined behavior.
+	}
+
+	private pruneMuxingPromises(): void {
+		// Drain all settled promises by awaiting them in a microtask
+		const current = this.muxingPromises;
+		this.muxingPromises = [];
+		// Re-add as a single combined promise so we don't lose track
+		const combined = Promise.all(current).then(() => undefined);
+		this.muxingPromises.push(combined);
 	}
 
 	private cleanup(): void {
