@@ -39,8 +39,8 @@ interface SettingsPanelProps {
 	onWallpaperChange: (path: string) => void;
 	selectedZoomDepth?: ZoomDepth | null;
 	onZoomDepthChange?: (depth: ZoomDepth) => void;
-	selectedZoomId?: string | null;
-	onZoomDelete?: (id: string) => void;
+	selectedZoomIds?: string[];
+	onDeleteSelectedZooms?: () => void;
 	selectedTrimId?: string | null;
 	onTrimDelete?: (id: string) => void;
 	shadowIntensity?: number;
@@ -120,8 +120,8 @@ export function SettingsPanel({
 	onWallpaperChange,
 	selectedZoomDepth,
 	onZoomDepthChange,
-	selectedZoomId,
-	onZoomDelete,
+	selectedZoomIds = [],
+	onDeleteSelectedZooms,
 	selectedTrimId,
 	onTrimDelete,
 	shadowIntensity = 0,
@@ -220,7 +220,7 @@ export function SettingsPanel({
 	];
 
 	const activeTabLabel = SETTINGS_TAB_LABELS[activeSettingsTab] ?? "Settings";
-	const zoomEnabled = Boolean(selectedZoomDepth);
+	const zoomEnabled = selectedZoomIds.length > 0;
 	const trimEnabled = Boolean(selectedTrimId);
 
 	const selectedAnnotation = selectedAnnotationId
@@ -736,13 +736,15 @@ export function SettingsPanel({
 						)}
 						{zoomEnabled && (
 							<Button
-								onClick={() => selectedZoomId && onZoomDelete?.(selectedZoomId)}
+								onClick={() => onDeleteSelectedZooms?.()}
 								variant="destructive"
 								size="sm"
 								className="h-8 w-full gap-2 border border-red-500/20 bg-red-500/10 text-xs text-red-400 transition-all duration-200 hover:border-red-500/30 hover:bg-red-500/20 active:scale-[0.98]"
 							>
 								<Trash size={12} />
-								Delete Zoom
+								{selectedZoomIds.length > 1
+									? `Delete ${selectedZoomIds.length} Zooms`
+									: "Delete Zoom"}
 							</Button>
 						)}
 						{trimEnabled && (

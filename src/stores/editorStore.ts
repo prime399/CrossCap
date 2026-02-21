@@ -62,7 +62,7 @@ interface TransientSlice {
 	currentTime: number;
 	duration: number;
 	cursorTelemetry: CursorTelemetryPoint[];
-	selectedZoomId: string | null;
+	selectedZoomIds: string[];
 	selectedTrimId: string | null;
 	selectedAnnotationId: string | null;
 	isExporting: boolean;
@@ -97,7 +97,10 @@ interface TransientActions {
 	setCurrentTime: (time: number) => void;
 	setDuration: (duration: number) => void;
 	setCursorTelemetry: (points: CursorTelemetryPoint[]) => void;
-	setSelectedZoomId: (id: string | null) => void;
+	setSelectedZoomIds: (ids: string[]) => void;
+	toggleZoomSelection: (id: string) => void;
+	selectAllZoomRegions: () => void;
+	deleteSelectedZoomRegions: () => void;
 	setSelectedTrimId: (id: string | null) => void;
 	setSelectedAnnotationId: (id: string | null) => void;
 	setIsExporting: (exporting: boolean) => void;
@@ -212,7 +215,7 @@ export const useEditorStore = create<EditorStore>()(
 			currentTime: 0,
 			duration: 0,
 			cursorTelemetry: [],
-			selectedZoomId: null,
+			selectedZoomIds: [],
 			selectedTrimId: null,
 			selectedAnnotationId: null,
 			isExporting: false,
@@ -243,7 +246,35 @@ export const useEditorStore = create<EditorStore>()(
 			setCurrentTime: (time) => set({ currentTime: time }),
 			setDuration: (duration) => set({ duration }),
 			setCursorTelemetry: (points) => set({ cursorTelemetry: points }),
-			setSelectedZoomId: (id) => set({ selectedZoomId: id }),
+			setSelectedZoomIds: (ids) =>
+				set({
+					selectedZoomIds: ids,
+					...(ids.length > 0 ? { selectedTrimId: null, selectedAnnotationId: null } : {}),
+				}),
+			toggleZoomSelection: (id) =>
+				set((s) => {
+					const ids = s.selectedZoomIds.includes(id)
+						? s.selectedZoomIds.filter((i) => i !== id)
+						: [...s.selectedZoomIds, id];
+					return {
+						selectedZoomIds: ids,
+						...(ids.length > 0 ? { selectedTrimId: null, selectedAnnotationId: null } : {}),
+					};
+				}),
+			selectAllZoomRegions: () =>
+				set((s) => ({
+					selectedZoomIds: s.regions.zoomRegions.map((r) => r.id),
+					selectedTrimId: null,
+					selectedAnnotationId: null,
+				})),
+			deleteSelectedZoomRegions: () =>
+				set((s) => ({
+					regions: {
+						...s.regions,
+						zoomRegions: s.regions.zoomRegions.filter((r) => !s.selectedZoomIds.includes(r.id)),
+					},
+					selectedZoomIds: [],
+				})),
 			setSelectedTrimId: (id) => set({ selectedTrimId: id }),
 			setSelectedAnnotationId: (id) => set({ selectedAnnotationId: id }),
 			setIsExporting: (exporting) => set({ isExporting: exporting }),
@@ -267,7 +298,7 @@ export const useEditorStore = create<EditorStore>()(
 				set({
 					regions: { ...state.regions, zoomRegions },
 					nextZoomId: state.nextZoomId + 1,
-					selectedZoomId: id,
+					selectedZoomIds: [id],
 					selectedTrimId: null,
 					selectedAnnotationId: null,
 				});
@@ -288,7 +319,7 @@ export const useEditorStore = create<EditorStore>()(
 				set({
 					regions: { ...state.regions, zoomRegions },
 					nextZoomId: state.nextZoomId + 1,
-					selectedZoomId: id,
+					selectedZoomIds: [id],
 					selectedTrimId: null,
 					selectedAnnotationId: null,
 				});
@@ -318,13 +349,13 @@ export const useEditorStore = create<EditorStore>()(
 				})),
 
 			updateZoomDepth: (depth) => {
-				const { selectedZoomId } = get();
-				if (!selectedZoomId) return;
+				const { selectedZoomIds } = get();
+				if (selectedZoomIds.length === 0) return;
 				set((s) => ({
 					regions: {
 						...s.regions,
 						zoomRegions: s.regions.zoomRegions.map((r) =>
-							r.id === selectedZoomId
+							selectedZoomIds.includes(r.id)
 								? { ...r, depth, focus: clampFocusToDepth(r.focus, depth) }
 								: r,
 						),
@@ -338,7 +369,7 @@ export const useEditorStore = create<EditorStore>()(
 						...s.regions,
 						zoomRegions: s.regions.zoomRegions.filter((r) => r.id !== id),
 					},
-					selectedZoomId: s.selectedZoomId === id ? null : s.selectedZoomId,
+					selectedZoomIds: s.selectedZoomIds.filter((i) => i !== id),
 				})),
 
 			addTrimRegion: (span) => {
@@ -354,7 +385,7 @@ export const useEditorStore = create<EditorStore>()(
 					regions: { ...state.regions, trimRegions },
 					nextTrimId: state.nextTrimId + 1,
 					selectedTrimId: id,
-					selectedZoomId: null,
+					selectedZoomIds: [],
 					selectedAnnotationId: null,
 				});
 				return id;
@@ -404,7 +435,7 @@ export const useEditorStore = create<EditorStore>()(
 					nextAnnotationId: state.nextAnnotationId + 1,
 					nextAnnotationZIndex: state.nextAnnotationZIndex + 1,
 					selectedAnnotationId: id,
-					selectedZoomId: null,
+					selectedZoomIds: [],
 					selectedTrimId: null,
 				});
 				return id;
@@ -538,7 +569,7 @@ export const useEditorStore = create<EditorStore>()(
 					isPlaying: false,
 					currentTime: 0,
 					duration: 0,
-					selectedZoomId: null,
+					selectedZoomIds: [],
 					selectedTrimId: null,
 					selectedAnnotationId: null,
 					aspectRatio: project.aspectRatio,

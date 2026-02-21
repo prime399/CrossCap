@@ -41,7 +41,9 @@ import PlaybackControls from "./PlaybackControls";
 import { SettingsPanel } from "./SettingsPanel";
 import TimelineEditor from "./timeline/TimelineEditor";
 import type { CropRegion } from "./types";
+import { DEFAULT_CROP_REGION } from "./types";
 import VideoPlayback, { type VideoPlaybackRef } from "./VideoPlayback";
+import { videoFocusToStageFocus } from "./videoPlayback/focusUtils";
 
 const PROJECT_VERSION = 1;
 
@@ -77,7 +79,7 @@ export default function VideoEditor() {
 	const currentTime = useEditorStore((s) => s.currentTime);
 	const duration = useEditorStore((s) => s.duration);
 	const cursorTelemetry = useEditorStore((s) => s.cursorTelemetry);
-	const selectedZoomId = useEditorStore((s) => s.selectedZoomId);
+	const selectedZoomIds = useEditorStore((s) => s.selectedZoomIds);
 	const selectedTrimId = useEditorStore((s) => s.selectedTrimId);
 	const selectedAnnotationId = useEditorStore((s) => s.selectedAnnotationId);
 	const isExporting = useEditorStore((s) => s.isExporting);
@@ -232,8 +234,21 @@ export default function VideoEditor() {
 			try {
 				const result = await window.electronAPI.getCurrentVideoPath();
 				if (result.success && result.path) {
+					const currentSource = useEditorStore.getState().videoSourcePath;
+					const isNewVideo = result.path !== currentSource;
 					store.setVideoSourcePath(result.path);
 					store.setVideoPath(toFileUrl(result.path));
+					if (isNewVideo) {
+						store.setRegions({
+							zoomRegions: [],
+							trimRegions: [],
+							annotationRegions: [],
+							cropRegion: DEFAULT_CROP_REGION,
+						});
+						store.setSelectedZoomIds([]);
+						store.setSelectedTrimId(null);
+						store.setSelectedAnnotationId(null);
+					}
 				} else {
 					store.setError("No video to load. Please record or select a video.");
 				}
@@ -495,33 +510,40 @@ export default function VideoEditor() {
 	}
 
 	const handleSelectZoom = useCallback(
-		(id: string | null) => {
-			store.setSelectedZoomId(id);
-			if (id) store.setSelectedTrimId(null);
+		(id: string | null, event?: React.MouseEvent) => {
+			if (!id) {
+				store.setSelectedZoomIds([]);
+				return;
+			}
+			if (event && (event.ctrlKey || event.metaKey)) {
+				store.toggleZoomSelection(id);
+			} else {
+				store.setSelectedZoomIds([id]);
+			}
 		},
-		[store.setSelectedZoomId, store.setSelectedTrimId],
+		[store.setSelectedZoomIds, store.toggleZoomSelection],
 	);
 
 	const handleSelectTrim = useCallback(
 		(id: string | null) => {
 			store.setSelectedTrimId(id);
 			if (id) {
-				store.setSelectedZoomId(null);
+				store.setSelectedZoomIds([]);
 				store.setSelectedAnnotationId(null);
 			}
 		},
-		[store.setSelectedTrimId, store.setSelectedZoomId, store.setSelectedAnnotationId],
+		[store.setSelectedTrimId, store.setSelectedZoomIds, store.setSelectedAnnotationId],
 	);
 
 	const handleSelectAnnotation = useCallback(
 		(id: string | null) => {
 			store.setSelectedAnnotationId(id);
 			if (id) {
-				store.setSelectedZoomId(null);
+				store.setSelectedZoomIds([]);
 				store.setSelectedTrimId(null);
 			}
 		},
-		[store.setSelectedAnnotationId, store.setSelectedZoomId, store.setSelectedTrimId],
+		[store.setSelectedAnnotationId, store.setSelectedZoomIds, store.setSelectedTrimId],
 	);
 
 	// Global Tab prevention
@@ -555,11 +577,41 @@ export default function VideoEditor() {
 		return () => window.removeEventListener("keydown", handleKeyDown, { capture: true });
 	}, []);
 
+	const handleZoomSuggested = useCallback(
+		(span: import("dnd-timeline").Span, focus: import("./types").ZoomFocus) => {
+			const layout = videoPlaybackRef.current?.getLayoutInfo();
+			if (layout) {
+				const stageFocus = videoFocusToStageFocus(
+					focus,
+					layout.stageSize,
+					layout.fullVideoSize,
+					layout.baseScale,
+					layout.baseOffset,
+				);
+				store.addSuggestedZoomRegion(span, stageFocus);
+			} else {
+				store.addSuggestedZoomRegion(span, focus);
+			}
+		},
+		[store.addSuggestedZoomRegion],
+	);
+
+	const handleDeleteSelectedZooms = useCallback(() => {
+		store.deleteSelectedZoomRegions();
+	}, [store.deleteSelectedZoomRegions]);
+
+	const handleSelectAllZooms = useCallback(() => {
+		store.selectAllZoomRegions();
+	}, [store.selectAllZoomRegions]);
+
+	const selectedZoomId = selectedZoomIds[0] ?? null;
+
 	useEffect(() => {
-		if (selectedZoomId && !zoomRegions.some((r) => r.id === selectedZoomId)) {
-			store.setSelectedZoomId(null);
+		const valid = selectedZoomIds.filter((id) => zoomRegions.some((r) => r.id === id));
+		if (valid.length !== selectedZoomIds.length) {
+			store.setSelectedZoomIds(valid);
 		}
-	}, [selectedZoomId, zoomRegions, store.setSelectedZoomId]);
+	}, [selectedZoomIds, zoomRegions, store.setSelectedZoomIds]);
 
 	useEffect(() => {
 		if (selectedTrimId && !trimRegions.some((r) => r.id === selectedTrimId)) {
@@ -1160,9 +1212,11 @@ export default function VideoEditor() {
 												? zoomRegions.find((z) => z.id === selectedZoomId)?.depth
 												: null
 										}
-										onZoomDepthChange={(depth) => selectedZoomId && store.updateZoomDepth(depth)}
-										selectedZoomId={selectedZoomId}
-										onZoomDelete={store.deleteZoomRegion}
+										onZoomDepthChange={(depth) =>
+											selectedZoomIds.length > 0 && store.updateZoomDepth(depth)
+										}
+										selectedZoomIds={selectedZoomIds}
+										onDeleteSelectedZooms={handleDeleteSelectedZooms}
 										selectedTrimId={selectedTrimId}
 										onTrimDelete={store.deleteTrimRegion}
 										shadowIntensity={shadowIntensity}
@@ -1240,11 +1294,13 @@ export default function VideoEditor() {
 									cursorTelemetry={cursorTelemetry}
 									zoomRegions={zoomRegions}
 									onZoomAdded={store.addZoomRegion}
-									onZoomSuggested={store.addSuggestedZoomRegion}
+									onZoomSuggested={handleZoomSuggested}
 									onZoomSpanChange={store.updateZoomSpan}
 									onZoomDelete={store.deleteZoomRegion}
-									selectedZoomId={selectedZoomId}
+									selectedZoomIds={selectedZoomIds}
 									onSelectZoom={handleSelectZoom}
+									onDeleteSelectedZooms={handleDeleteSelectedZooms}
+									onSelectAllZooms={handleSelectAllZooms}
 									trimRegions={trimRegions}
 									onTrimAdded={store.addTrimRegion}
 									onTrimSpanChange={store.updateTrimSpan}

@@ -25,7 +25,10 @@ export function KeyboardShortcutsHelp() {
 
 	return (
 		<div className="relative group">
-			<Question size={16} className="text-slate-500 hover:text-cc-accent transition-colors cursor-help" />
+			<Question
+				size={16}
+				className="text-slate-500 hover:text-cc-accent transition-colors cursor-help"
+			/>
 			<div className="absolute right-0 top-full mt-2 w-64 bg-cc-surface-0 border border-white/10 rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl z-50">
 				<div className="text-xs font-semibold text-slate-200 mb-2">Keyboard Shortcuts</div>
 				<div className="space-y-1.5 text-[10px]">

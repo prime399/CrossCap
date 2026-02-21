@@ -1,6 +1,6 @@
+import { ChatText, MagnifyingGlassPlus, Scissors } from "@phosphor-icons/react";
 import type { Span } from "dnd-timeline";
 import { useItem } from "dnd-timeline";
-import { ChatText, MagnifyingGlassPlus, Scissors } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import glassStyles from "./ItemGlass.module.css";
@@ -11,7 +11,7 @@ interface ItemProps {
 	rowId: string;
 	children: React.ReactNode;
 	isSelected?: boolean;
-	onSelect?: () => void;
+	onSelect?: (event?: React.MouseEvent) => void;
 	zoomDepth?: number;
 	variant?: "zoom" | "trim" | "annotation";
 }
@@ -87,7 +87,7 @@ export default function Item({
 					style={{ height: 40, color: "#fff", minWidth: 24 }}
 					onClick={(event) => {
 						event.stopPropagation();
-						onSelect?.();
+						onSelect?.(event);
 					}}
 				>
 					<div

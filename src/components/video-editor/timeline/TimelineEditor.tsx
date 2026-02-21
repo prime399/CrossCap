@@ -47,8 +47,10 @@ interface TimelineEditorProps {
 	onZoomSuggested?: (span: Span, focus: ZoomFocus) => void;
 	onZoomSpanChange: (id: string, span: Span) => void;
 	onZoomDelete: (id: string) => void;
-	selectedZoomId: string | null;
-	onSelectZoom: (id: string | null) => void;
+	selectedZoomIds: string[];
+	onSelectZoom: (id: string | null, event?: React.MouseEvent) => void;
+	onDeleteSelectedZooms: () => void;
+	onSelectAllZooms: () => void;
 	trimRegions?: TrimRegion[];
 	onTrimAdded?: (span: Span) => void;
 	onTrimSpanChange?: (id: string, span: Span) => void;
@@ -417,7 +419,7 @@ function Timeline({
 	onSelectZoom,
 	onSelectTrim,
 	onSelectAnnotation,
-	selectedZoomId,
+	selectedZoomIds,
 	selectedTrimId,
 	selectedAnnotationId,
 	keyframes = [],
@@ -427,10 +429,10 @@ function Timeline({
 	intervalMs: number;
 	currentTimeMs: number;
 	onSeek?: (time: number) => void;
-	onSelectZoom?: (id: string | null) => void;
+	onSelectZoom?: (id: string | null, event?: React.MouseEvent) => void;
 	onSelectTrim?: (id: string | null) => void;
 	onSelectAnnotation?: (id: string | null) => void;
-	selectedZoomId: string | null;
+	selectedZoomIds: string[];
 	selectedTrimId?: string | null;
 	selectedAnnotationId?: string | null;
 	keyframes?: { id: string; time: number }[];
@@ -511,8 +513,8 @@ function Timeline({
 						key={item.id}
 						rowId={item.rowId}
 						span={item.span}
-						isSelected={item.id === selectedZoomId}
-						onSelect={() => onSelectZoom?.(item.id)}
+						isSelected={selectedZoomIds.includes(item.id)}
+						onSelect={(event) => onSelectZoom?.(item.id, event)}
 						zoomDepth={item.zoomDepth}
 						variant="zoom"
 					>
@@ -569,9 +571,10 @@ export default function TimelineEditor({
 	onZoomAdded,
 	onZoomSuggested,
 	onZoomSpanChange,
-	onZoomDelete,
-	selectedZoomId,
+	selectedZoomIds,
 	onSelectZoom,
+	onDeleteSelectedZooms,
+	onSelectAllZooms,
 	trimRegions = [],
 	onTrimAdded,
 	onTrimSpanChange,
@@ -642,10 +645,9 @@ export default function TimelineEditor({
 
 	// Delete selected zoom item
 	const deleteSelectedZoom = useCallback(() => {
-		if (!selectedZoomId) return;
-		onZoomDelete(selectedZoomId);
-		onSelectZoom(null);
-	}, [selectedZoomId, onZoomDelete, onSelectZoom]);
+		if (selectedZoomIds.length === 0) return;
+		onDeleteSelectedZooms();
+	}, [selectedZoomIds, onDeleteSelectedZooms]);
 
 	// Delete selected trim item
 	const deleteSelectedTrim = useCallback(() => {
@@ -908,7 +910,10 @@ export default function TimelineEditor({
 			if (e.key === "t" || e.key === "T") {
 				handleAddTrim();
 			}
-			if (e.key === "a" || e.key === "A") {
+			if ((e.key === "a" || e.key === "A") && (e.ctrlKey || e.metaKey)) {
+				e.preventDefault();
+				onSelectAllZooms();
+			} else if (e.key === "a" || e.key === "A") {
 				handleAddAnnotation();
 			}
 
@@ -942,7 +947,7 @@ export default function TimelineEditor({
 			) {
 				if (selectedKeyframeId) {
 					deleteSelectedKeyframe();
-				} else if (selectedZoomId) {
+				} else if (selectedZoomIds.length > 0) {
 					deleteSelectedZoom();
 				} else if (selectedTrimId) {
 					deleteSelectedTrim();
@@ -963,12 +968,13 @@ export default function TimelineEditor({
 		deleteSelectedTrim,
 		deleteSelectedAnnotation,
 		selectedKeyframeId,
-		selectedZoomId,
+		selectedZoomIds,
 		selectedTrimId,
 		selectedAnnotationId,
 		annotationRegions,
 		currentTime,
 		onSelectAnnotation,
+		onSelectAllZooms,
 	]);
 
 	const clampedRange = useMemo<Range>(() => {
@@ -1186,7 +1192,7 @@ export default function TimelineEditor({
 						onSelectZoom={onSelectZoom}
 						onSelectTrim={onSelectTrim}
 						onSelectAnnotation={onSelectAnnotation}
-						selectedZoomId={selectedZoomId}
+						selectedZoomIds={selectedZoomIds}
 						selectedTrimId={selectedTrimId}
 						selectedAnnotationId={selectedAnnotationId}
 						keyframes={keyframes}

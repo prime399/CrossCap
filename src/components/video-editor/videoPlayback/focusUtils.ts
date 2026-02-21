@@ -58,3 +58,29 @@ export function stageFocusToVideoSpace(
 		cy: videoNormY,
 	};
 }
+
+export function videoFocusToStageFocus(
+	focus: ZoomFocus,
+	stageSize: StageSize,
+	fullVideoSize: { width: number; height: number },
+	baseScale: number,
+	baseOffset: { x: number; y: number },
+): ZoomFocus {
+	if (
+		!stageSize.width ||
+		!stageSize.height ||
+		!fullVideoSize.width ||
+		!fullVideoSize.height ||
+		baseScale <= 0
+	) {
+		return focus;
+	}
+
+	const stageX = baseOffset.x + focus.cx * fullVideoSize.width * baseScale;
+	const stageY = baseOffset.y + focus.cy * fullVideoSize.height * baseScale;
+
+	return {
+		cx: Math.max(0, Math.min(1, stageX / stageSize.width)),
+		cy: Math.max(0, Math.min(1, stageY / stageSize.height)),
+	};
+}

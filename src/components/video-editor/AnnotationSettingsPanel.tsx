@@ -1,18 +1,18 @@
-import Block from "@uiw/react-color-block";
 import {
+	CaretDown,
+	Image as ImageIcon,
+	Info,
 	TextAlignCenter,
 	TextAlignLeft,
 	TextAlignRight,
 	TextB,
-	CaretDown,
-	Image as ImageIcon,
-	Info,
 	TextItalic,
-	Trash,
 	TextT,
 	TextUnderline,
+	Trash,
 	UploadSimple,
 } from "@phosphor-icons/react";
+import Block from "@uiw/react-color-block";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -143,24 +143,15 @@ export function AnnotationSettingsPanel({
 					className="mb-6"
 				>
 					<TabsList className="mb-4 w-full grid grid-cols-3 h-auto rounded-xl p-1">
-						<TabsTrigger
-							value="text"
-							className="py-2 rounded-lg gap-2"
-						>
+						<TabsTrigger value="text" className="py-2 rounded-lg gap-2">
 							<TextT size={16} weight="bold" />
 							Text
 						</TabsTrigger>
-						<TabsTrigger
-							value="image"
-							className="py-2 rounded-lg gap-2"
-						>
+						<TabsTrigger value="image" className="py-2 rounded-lg gap-2">
 							<ImageIcon size={16} />
 							Image
 						</TabsTrigger>
-						<TabsTrigger
-							value="figure"
-							className="py-2 rounded-lg gap-2"
-						>
+						<TabsTrigger value="figure" className="py-2 rounded-lg gap-2">
 							<svg
 								className="w-4 h-4"
 								viewBox="0 0 24 24"

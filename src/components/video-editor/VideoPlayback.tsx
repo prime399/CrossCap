@@ -81,6 +81,12 @@ export interface VideoPlaybackRef {
 	containerRef: React.RefObject<HTMLDivElement>;
 	play: () => Promise<void>;
 	pause: () => void;
+	getLayoutInfo: () => {
+		stageSize: { width: number; height: number };
+		fullVideoSize: { width: number; height: number };
+		baseScale: number;
+		baseOffset: { x: number; y: number };
+	} | null;
 }
 
 function hexToRgba(hexColor: string, opacity: number): string {
@@ -308,6 +314,21 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					return;
 				}
 				video.pause();
+			},
+			getLayoutInfo: () => {
+				const stage = stageSizeRef.current;
+				if (!stage.width || !stage.height) return null;
+				const video = videoRef.current;
+				const locked = lockedVideoDimensionsRef.current;
+				const vw = locked?.width ?? video?.videoWidth ?? 0;
+				const vh = locked?.height ?? video?.videoHeight ?? 0;
+				if (!vw || !vh) return null;
+				return {
+					stageSize: { ...stage },
+					fullVideoSize: { width: vw, height: vh },
+					baseScale: baseScaleRef.current,
+					baseOffset: { ...baseOffsetRef.current },
+				};
 			},
 		}));
 
