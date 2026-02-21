@@ -186,16 +186,39 @@ export class GifExporter {
 				});
 			}
 
-			// Render the GIF
-			const blob = await new Promise<Blob>((resolve, _reject) => {
+			// Render the GIF — with reject path and stall detection
+			const blob = await new Promise<Blob>((resolve, reject) => {
 				const compileStartMs = performance.now();
 				let compileEtaSeconds = Math.max(3, smoothedEtaSeconds * 0.25);
+				let lastProgressTime = performance.now();
+				let settled = false;
+
+				const STALL_TIMEOUT_MS = 30_000;
+				const stallTimer = setInterval(() => {
+					if (settled) return;
+					if (this.cancelled) {
+						settled = true;
+						clearInterval(stallTimer);
+						reject(new Error("GIF export cancelled"));
+						return;
+					}
+					if (performance.now() - lastProgressTime > STALL_TIMEOUT_MS) {
+						settled = true;
+						clearInterval(stallTimer);
+						reject(new Error("GIF encoding stalled — no progress for 30s"));
+					}
+				}, 2_000);
+
 				this.gif!.on("finished", (blob: Blob) => {
+					if (settled) return;
+					settled = true;
+					clearInterval(stallTimer);
 					resolve(blob);
 				});
 
 				// Track rendering progress
 				this.gif!.on("progress", (progress: number) => {
+					lastProgressTime = performance.now();
 					const elapsedSeconds = Math.max((performance.now() - compileStartMs) / 1000, 0.001);
 					const normalizedProgress = Math.max(progress, 0.001);
 					const rawEtaSeconds = Math.max(
@@ -216,7 +239,6 @@ export class GifExporter {
 					}
 				});
 
-				// gif.js doesn't have a typed 'error' event, but we can catch errors in the try/catch
 				this.gif!.render();
 			});
 

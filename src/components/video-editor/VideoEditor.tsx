@@ -647,6 +647,17 @@ export default function VideoEditor() {
 				const result = await promise;
 
 				if (result.success && result.blob) {
+					// Signal rendering complete before opening save dialog
+					store.setExportProgress({
+						currentFrame: 1,
+						totalFrames: 1,
+						percentage: 100,
+						estimatedTimeRemaining: 0,
+						phase: "finalizing",
+						renderProgress: 100,
+						phaseDetail: "Saving file...",
+					});
+
 					const arrayBuffer = await result.blob.arrayBuffer();
 					const ext = exportSettings.format === "gif" ? "gif" : "mp4";
 					const fileName = `export-${Date.now()}.${ext}`;
@@ -654,8 +665,11 @@ export default function VideoEditor() {
 
 					if (saveResult.cancelled) {
 						toast.info("Export cancelled");
+						store.setShowExportDialog(false);
+						store.setExportProgress(null);
 					} else if (saveResult.success) {
 						toast.success(`${ext.toUpperCase()} exported to ${saveResult.path}`);
+						// Leave dialog open — ExportDialog's success effect will auto-close it
 					} else {
 						store.setExportError(saveResult.message || "Failed to save");
 						toast.error(saveResult.message || "Failed to save");
@@ -675,8 +689,9 @@ export default function VideoEditor() {
 			} finally {
 				store.setIsExporting(false);
 				exportHandleRef.current = null;
-				store.setShowExportDialog(false);
-				store.setExportProgress(null);
+				// Don't close dialog or clear progress here — let ExportDialog's
+				// success effect show the "Export Complete" animation for 2s,
+				// then auto-close. On error, the dialog stays open with the error.
 			}
 		},
 		[
@@ -768,6 +783,12 @@ export default function VideoEditor() {
 			store.setExportProgress(null);
 			store.setExportError(null);
 		}
+	}, [store]);
+
+	const handleCloseExportDialog = useCallback(() => {
+		store.setShowExportDialog(false);
+		store.setExportProgress(null);
+		store.setExportError(null);
 	}, [store]);
 
 	const handleWindowMinimize = useCallback(() => {
@@ -888,7 +909,7 @@ export default function VideoEditor() {
 				<Toaster theme="dark" className="pointer-events-auto" />
 				<ExportDialog
 					isOpen={showExportDialog}
-					onClose={() => store.setShowExportDialog(false)}
+					onClose={handleCloseExportDialog}
 					progress={exportProgress}
 					isExporting={isExporting}
 					error={exportError}

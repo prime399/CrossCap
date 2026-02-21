@@ -52,15 +52,17 @@ export class VideoExporter {
 	private cancelled = false;
 	private encodeQueue = 0;
 	private audioEncodeQueue = 0;
-	// Increased queue size for better throughput with hardware encoding
-	private readonly MAX_ENCODE_QUEUE = 120;
+	private readonly MAX_ENCODE_QUEUE = 30;
 	private readonly MAX_AUDIO_ENCODE_QUEUE = 60;
+	private readonly ENCODER_STALL_TIMEOUT_MS = 15_000;
 	private videoDescription: Uint8Array | undefined;
 	private videoColorSpace: VideoColorSpaceInit | undefined;
 	// Track muxing promises for parallel processing
 	private muxingPromises: Promise<void>[] = [];
+	private muxingError: Error | null = null;
 	private videoChunkCount = 0;
 	private audioChunkCount = 0;
+	private lastEncoderOutputTime = 0;
 
 	constructor(config: VideoExporterConfig) {
 		this.config = config;
@@ -166,9 +168,23 @@ export class VideoExporter {
 						},
 					});
 
-					// Check encoder queue before encoding to keep it full
+					// Wait for encoder queue with stall detection
+					const queueWaitStart = performance.now();
 					while (this.encodeQueue >= this.MAX_ENCODE_QUEUE && !this.cancelled) {
-						await new Promise((resolve) => setTimeout(resolve, 0));
+						await new Promise((resolve) => setTimeout(resolve, 5));
+						const elapsed = performance.now() - this.lastEncoderOutputTime;
+						if (this.lastEncoderOutputTime > 0 && elapsed > this.ENCODER_STALL_TIMEOUT_MS) {
+							console.error(
+								`[VideoExporter] Encoder stalled — no output for ${Math.round(elapsed)}ms`,
+							);
+							this.cancelled = true;
+							throw new Error("Video encoder stalled — no output received");
+						}
+						if (performance.now() - queueWaitStart > this.ENCODER_STALL_TIMEOUT_MS * 2) {
+							console.error("[VideoExporter] Encoder queue wait exceeded timeout");
+							this.cancelled = true;
+							throw new Error("Video encoder queue timeout exceeded");
+						}
 					}
 
 					if (this.encoder && this.encoder.state === "configured") {
@@ -227,7 +243,15 @@ export class VideoExporter {
 
 			reportFinalizing("Flushing video encoder", 20);
 			if (this.encoder && this.encoder.state === "configured") {
-				await this.encoder.flush();
+				await Promise.race([
+					this.encoder.flush(),
+					new Promise<never>((_, reject) => {
+						setTimeout(
+							() => reject(new Error("Video encoder flush timed out")),
+							this.ENCODER_STALL_TIMEOUT_MS,
+						);
+					}),
+				]);
 			}
 			console.log("[VideoExporter] Video encoder flushed");
 
@@ -248,6 +272,10 @@ export class VideoExporter {
 			console.log(`[VideoExporter] Waiting for ${this.muxingPromises.length} muxing ops`);
 			await Promise.all(this.muxingPromises);
 			console.log("[VideoExporter] All muxing operations complete");
+
+			if (this.muxingError) {
+				throw this.muxingError;
+			}
 
 			reportFinalizing("Writing MP4 container", 92);
 			const blob = await this.muxer!.finalize();
@@ -270,12 +298,16 @@ export class VideoExporter {
 		this.encodeQueue = 0;
 		this.audioEncodeQueue = 0;
 		this.muxingPromises = [];
+		this.muxingError = null;
 		this.videoChunkCount = 0;
 		this.audioChunkCount = 0;
+		this.lastEncoderOutputTime = performance.now();
 		let videoDescription: Uint8Array | undefined;
 
 		this.encoder = new VideoEncoder({
 			output: (chunk, meta) => {
+				this.lastEncoderOutputTime = performance.now();
+
 				// Capture decoder config metadata from encoder output
 				if (meta?.decoderConfig?.description && !videoDescription) {
 					const desc = meta.decoderConfig.description;
@@ -322,6 +354,10 @@ export class VideoExporter {
 						}
 					} catch (error) {
 						console.error("Muxing error:", error);
+						if (!this.muxingError) {
+							this.muxingError = error instanceof Error ? error : new Error(String(error));
+						}
+						this.cancelled = true;
 					}
 				})();
 
@@ -330,7 +366,6 @@ export class VideoExporter {
 			},
 			error: (error) => {
 				console.error("[VideoExporter] Encoder error:", error);
-				// Stop export encoding failed
 				this.cancelled = true;
 			},
 		});
@@ -374,7 +409,8 @@ export class VideoExporter {
 		if (this.streamingDecoder) {
 			this.streamingDecoder.cancel();
 		}
-		this.cleanup();
+		// Don't call cleanup() here — let the export() finally block handle it.
+		// Calling cleanup() while flush() is pending causes undefined behavior.
 	}
 
 	private cleanup(): void {
@@ -422,10 +458,12 @@ export class VideoExporter {
 		this.encodeQueue = 0;
 		this.audioEncodeQueue = 0;
 		this.muxingPromises = [];
+		this.muxingError = null;
 		this.videoChunkCount = 0;
 		this.audioChunkCount = 0;
 		this.videoDescription = undefined;
 		this.videoColorSpace = undefined;
+		this.lastEncoderOutputTime = 0;
 	}
 
 	private computeKeptSegments(
@@ -574,6 +612,10 @@ export class VideoExporter {
 						await this.muxer!.addAudioChunk(chunk, meta ?? fallbackMeta);
 					} catch (error) {
 						console.error("Audio muxing error:", error);
+						if (!this.muxingError) {
+							this.muxingError = error instanceof Error ? error : new Error(String(error));
+						}
+						this.cancelled = true;
 					}
 				})();
 
