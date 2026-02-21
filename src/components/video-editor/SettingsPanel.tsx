@@ -350,8 +350,8 @@ export function SettingsPanel({
 	}
 
 	return (
-		<div className="flex h-full min-w-0 flex-[2] flex-col overflow-hidden rounded-2xl border border-[hsl(var(--cc-border-strong))]/75 bg-gradient-to-b from-[#0f141d] via-[#0c1119] to-[#090d13] shadow-[0_20px_48px_rgba(2,8,23,0.55)] backdrop-blur-xl">
-			<div className="custom-scrollbar flex-1 overflow-y-auto p-3.5 pb-0">
+		<div className="flex h-full min-h-0 min-w-0 flex-[2] flex-col overflow-hidden rounded-2xl border border-[hsl(var(--cc-border-strong))]/75 bg-gradient-to-b from-[#0f141d] via-[#0c1119] to-[#090d13] shadow-[0_20px_48px_rgba(2,8,23,0.55)] backdrop-blur-xl">
+			<div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-3.5 pb-0">
 				<Tabs value={activeSettingsTab} onValueChange={setActiveSettingsTab} className="w-full">
 					<div className="custom-scrollbar mb-3.5 overflow-x-auto">
 						<TabsList className="inline-flex h-11 min-w-full rounded-xl border border-white/10 bg-black/35 p-1">

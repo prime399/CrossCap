@@ -888,7 +888,7 @@ export default function VideoEditor() {
 								</div>
 
 								{/* Floating settings panel */}
-								<div className="absolute right-3 top-3 z-30 max-h-[calc(100%-24px)] w-[328px]">
+								<div className="absolute right-3 top-3 z-30 h-[calc(100%-24px)] w-[328px]">
 									<SettingsPanel
 										selected={wallpaper}
 										onWallpaperChange={setWallpaper}
