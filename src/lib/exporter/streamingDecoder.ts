@@ -111,7 +111,14 @@ export class StreamingVideoDecoder {
 		});
 
 		const decoderConfig = await this.demuxer.getDecoderConfig("video");
+		console.log("[StreamingDecoder] decoderConfig:", {
+			codec: decoderConfig.codec,
+			codedWidth: decoderConfig.codedWidth,
+			codedHeight: decoderConfig.codedHeight,
+			hardwareAcceleration: decoderConfig.hardwareAcceleration,
+		});
 		const segments = this.computeSegments(this.metadata.duration, trimRegions);
+		console.log("[StreamingDecoder] segments:", segments);
 		const frameDurationUs = 1_000_000 / targetFrameRate;
 
 		// Async frame queue — decoder pushes, consumer pulls
@@ -120,8 +127,18 @@ export class StreamingVideoDecoder {
 		let decodeError: Error | null = null;
 		let decodeDone = false;
 
+		let decodedFrameCount = 0;
 		this.decoder = new VideoDecoder({
 			output: (frame: VideoFrame) => {
+				decodedFrameCount++;
+				if (decodedFrameCount <= 3 || decodedFrameCount % 100 === 0) {
+					console.log(`[StreamingDecoder] decoder output frame #${decodedFrameCount}`, {
+						timestamp: frame.timestamp,
+						duration: frame.duration,
+						width: frame.codedWidth,
+						height: frame.codedHeight,
+					});
+				}
 				if (frameResolve) {
 					const resolve = frameResolve;
 					frameResolve = null;
@@ -131,6 +148,7 @@ export class StreamingVideoDecoder {
 				}
 			},
 			error: (e: DOMException) => {
+				console.error("[StreamingDecoder] decoder error:", e.message);
 				decodeError = new Error(`VideoDecoder error: ${e.message}`);
 				if (frameResolve) {
 					const resolve = frameResolve;
@@ -172,11 +190,24 @@ export class StreamingVideoDecoder {
 		const reader = this.demuxer.read("video").getReader();
 
 		// Feed chunks to decoder in background with backpressure
+		let chunksRead = 0;
 		const feedPromise = (async () => {
 			try {
 				while (!this.cancelled) {
 					const { done, value: chunk } = await reader.read();
-					if (done || !chunk) break;
+					if (done || !chunk) {
+						console.log(`[StreamingDecoder] feed done — ${chunksRead} chunks read`);
+						break;
+					}
+					chunksRead++;
+					if (chunksRead <= 3 || chunksRead % 100 === 0) {
+						console.log(`[StreamingDecoder] feeding chunk #${chunksRead}`, {
+							type: chunk.type,
+							timestamp: chunk.timestamp,
+							byteLength: chunk.byteLength,
+							decoderQueueSize: this.decoder!.decodeQueueSize,
+						});
+					}
 
 					while (this.decoder!.decodeQueueSize > 10 && !this.cancelled) {
 						await new Promise((resolve) => setTimeout(resolve, 1));
@@ -190,8 +221,15 @@ export class StreamingVideoDecoder {
 					await this.decoder!.flush();
 				}
 			} catch (e) {
+				console.error("[StreamingDecoder] feed error:", e);
 				decodeError = e instanceof Error ? e : new Error(String(e));
 			} finally {
+				console.log("[StreamingDecoder] feed loop ended", {
+					chunksRead,
+					decodedFrameCount,
+					cancelled: this.cancelled,
+					decoderState: this.decoder?.state,
+				});
 				decodeDone = true;
 				if (frameResolve) {
 					const resolve = frameResolve;
@@ -205,13 +243,33 @@ export class StreamingVideoDecoder {
 		let segmentIdx = 0;
 		let exportFrameIndex = 0;
 		let segmentBuffer: VideoFrame[] = [];
+		let routedFrameCount = 0;
 
 		while (!this.cancelled && segmentIdx < segments.length) {
 			const frame = await getNextFrame();
-			if (!frame) break;
+			if (!frame) {
+				console.log("[StreamingDecoder] getNextFrame returned null", {
+					routedFrameCount,
+					decodedFrameCount,
+					decodeDone,
+					cancelled: this.cancelled,
+					decodeError: String(decodeError),
+				});
+				break;
+			}
+			routedFrameCount++;
 
 			const frameTimeSec = frame.timestamp / 1_000_000;
 			const currentSegment = segments[segmentIdx];
+
+			if (routedFrameCount <= 5 || routedFrameCount % 100 === 0) {
+				console.log(`[StreamingDecoder] routing frame #${routedFrameCount}`, {
+					frameTimeSec: frameTimeSec.toFixed(3),
+					segmentIdx,
+					segmentRange: `${currentSegment.startSec.toFixed(3)}-${currentSegment.endSec.toFixed(3)}`,
+					bufferSize: segmentBuffer.length,
+				});
+			}
 
 			// Before current segment — trimmed or pre-video
 			if (frameTimeSec < currentSegment.startSec - 0.001) {
