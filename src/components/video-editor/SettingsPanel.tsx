@@ -16,6 +16,7 @@ import {
 } from "@phosphor-icons/react";
 import Block from "@uiw/react-color-block";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -634,48 +635,53 @@ export function SettingsPanel({
 				</Tabs>
 			</div>
 
-			{showCropModal && cropRegion && onCropChange && (
-				<>
-					<div
-						className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-in fade-in duration-200"
-						onClick={() => onShowCropModal?.(false)}
-					/>
-					<div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[60] bg-[#0b0d12] rounded-2xl shadow-2xl border border-white/10 p-6 w-[92vw] max-w-6xl max-h-[92vh] overflow-auto animate-in zoom-in-95 duration-200">
-						<div className="flex items-center justify-between mb-3">
-							<div>
-								<span className="text-xl font-bold text-slate-200">Crop Video</span>
-								<p className="text-sm text-slate-400 mt-1">
-									Drag edges, corners, or the center box to reframe your shot
-								</p>
-							</div>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => onShowCropModal?.(false)}
-								className="hover:bg-white/10 text-slate-400 hover:text-white"
-							>
-								<X size={20} weight="bold" />
-							</Button>
-						</div>
-						<CropControl
-							videoElement={videoElement || null}
-							cropRegion={cropRegion}
-							onCropChange={onCropChange}
-							aspectRatio={aspectRatio}
-							onReset={() => onCropChange(DEFAULT_CROP_REGION)}
+			{showCropModal &&
+				cropRegion &&
+				onCropChange &&
+				typeof document !== "undefined" &&
+				createPortal(
+					<>
+						<div
+							className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-in fade-in duration-200"
+							onClick={() => onShowCropModal?.(false)}
 						/>
-						<div className="mt-5 flex justify-center">
-							<Button
-								onClick={() => onShowCropModal?.(false)}
-								size="sm"
-								className="bg-white text-black hover:bg-slate-200 rounded-full px-6"
-							>
-								Save
-							</Button>
+						<div className="fixed top-1/2 left-1/2 z-[60] w-[92vw] max-w-6xl max-h-[92vh] -translate-x-1/2 -translate-y-1/2 overflow-auto rounded-2xl border border-white/10 bg-[#0b0d12] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+							<div className="mb-3 flex items-center justify-between">
+								<div>
+									<span className="text-xl font-bold text-slate-200">Crop Video</span>
+									<p className="mt-1 text-sm text-slate-400">
+										Drag edges, corners, or the center box to reframe your shot
+									</p>
+								</div>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => onShowCropModal?.(false)}
+									className="text-slate-400 hover:bg-white/10 hover:text-white"
+								>
+									<X size={20} weight="bold" />
+								</Button>
+							</div>
+							<CropControl
+								videoElement={videoElement || null}
+								cropRegion={cropRegion}
+								onCropChange={onCropChange}
+								aspectRatio={aspectRatio}
+								onReset={() => onCropChange(DEFAULT_CROP_REGION)}
+							/>
+							<div className="mt-5 flex justify-center">
+								<Button
+									onClick={() => onShowCropModal?.(false)}
+									size="sm"
+									className="rounded-full bg-white px-6 text-black hover:bg-slate-200"
+								>
+									Save
+								</Button>
+							</div>
 						</div>
-					</div>
-				</>
-			)}
+					</>,
+					document.body,
+				)}
 
 			<div className="flex-shrink-0 p-4 pt-3 border-t border-white/[0.06] bg-black/20">
 				<div className="flex items-center gap-2 mb-3">
