@@ -42,7 +42,11 @@
 		--cc-annotation-dark: 263 70% 50%;
 		--cc-surface-0: 240 6% 3.5%;
 		--cc-surface-1: 240 4% 9%;
+		--cc-surface-2: 236 18% 12%;
 		--cc-popover: 240 4% 10%;
+		--cc-border-strong: 218 22% 20%;
+		--cc-text-primary: 210 40% 96%;
+		--cc-text-muted: 215 16% 70%;
 	}
 	.dark {
 		--background: 20 14.3% 4.1%;
@@ -80,7 +84,11 @@
 		--cc-annotation-dark: 263 70% 50%;
 		--cc-surface-0: 240 6% 3.5%;
 		--cc-surface-1: 240 4% 9%;
+		--cc-surface-2: 236 18% 12%;
 		--cc-popover: 240 4% 10%;
+		--cc-border-strong: 218 22% 20%;
+		--cc-text-primary: 210 40% 96%;
+		--cc-text-muted: 215 16% 70%;
 	}
 }
 
@@ -92,6 +100,30 @@
 		@apply bg-background text-foreground;
 		-webkit-user-select: none;
 		user-select: none;
+		font-family:
+			"Inter Variable",
+			Inter,
+			ui-sans-serif,
+			system-ui,
+			-apple-system,
+			"Segoe UI",
+			sans-serif;
+		font-feature-settings:
+			"cv03" 1,
+			"cv04" 1,
+			"cv11" 1;
+		text-rendering: optimizeLegibility;
+		background:
+			radial-gradient(circle at 22% -8%, rgba(56, 189, 248, 0.08), transparent 34%),
+			radial-gradient(circle at 85% -12%, rgba(249, 115, 22, 0.12), transparent 30%),
+			hsl(var(--cc-surface-0));
+	}
+
+	h1,
+	h2,
+	h3,
+	h4 {
+		letter-spacing: -0.015em;
 	}
 }
 
