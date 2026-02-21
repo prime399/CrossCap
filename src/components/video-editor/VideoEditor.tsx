@@ -870,6 +870,8 @@ export default function VideoEditor() {
 					gifSizePreset={gifSizePreset}
 					onGifSizePresetChange={setGifSizePreset}
 					gifOutputDimensions={gifOutputDimensions}
+					sourceWidth={videoPlaybackRef.current?.video?.videoWidth || 1920}
+					sourceHeight={videoPlaybackRef.current?.video?.videoHeight || 1080}
 				/>
 				<Toaster theme="dark" className="pointer-events-auto" />
 				<ExportDialog

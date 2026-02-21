@@ -12,9 +12,9 @@ import {
 import type React from "react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
+	calculateExportDimensions,
 	type ExportFormat,
 	type ExportQuality,
 	GIF_FRAME_RATES,
@@ -75,6 +75,8 @@ interface ExportPageProps {
 	gifSizePreset: "medium" | "large" | "original";
 	onGifSizePresetChange: (preset: "medium" | "large" | "original") => void;
 	gifOutputDimensions: { width: number; height: number };
+	sourceWidth: number;
+	sourceHeight: number;
 }
 
 export function ExportPage({
@@ -126,15 +128,23 @@ export function ExportPage({
 	gifSizePreset,
 	onGifSizePresetChange,
 	gifOutputDimensions,
+	sourceWidth,
+	sourceHeight,
 }: ExportPageProps) {
 	const ignoreZoomSelection = () => undefined;
 	const ignoreZoomFocus = () => undefined;
 
+	const outputDimensions = useMemo(() => {
+		if (exportFormat === "gif") return gifOutputDimensions;
+		return calculateExportDimensions(sourceWidth, sourceHeight, exportQuality, aspectRatio);
+	}, [exportFormat, gifOutputDimensions, sourceWidth, sourceHeight, exportQuality, aspectRatio]);
+
 	const resolutionValue = useMemo(() => {
+		if (exportFormat === "gif") return `${gifOutputDimensions.width}x${gifOutputDimensions.height}`;
 		if (exportQuality === "medium") return "720p";
 		if (exportQuality === "good") return "1080p";
-		return "4k";
-	}, [exportQuality]);
+		return "Source";
+	}, [exportFormat, exportQuality, gifOutputDimensions]);
 
 	const estimatedSizeLabel = useMemo(() => {
 		if (exportFormat === "gif") return "larger";
@@ -217,7 +227,7 @@ export function ExportPage({
 						<div className="mb-2 flex items-center justify-between px-1 text-xs text-slate-400">
 							<span>Preview</span>
 							<span>
-								{Math.round(gifOutputDimensions.width)}x{Math.round(gifOutputDimensions.height)}
+								{Math.round(outputDimensions.width)}x{Math.round(outputDimensions.height)}
 							</span>
 						</div>
 						<div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/40">
@@ -346,91 +356,47 @@ export function ExportPage({
 							</section>
 
 							{exportFormat === "mp4" && (
-								<>
-									<section>
-										<div className="mb-2 text-xs font-semibold text-slate-200">Resolution</div>
-										<div className="grid grid-cols-3 gap-2 rounded-lg border border-white/10 bg-black/25 p-1">
-											<button
-												type="button"
-												onClick={() => onExportQualityChange("medium")}
-												className={cn(
-													"rounded-md py-1.5 text-xs font-semibold transition",
-													exportQuality === "medium"
-														? "bg-white text-black"
-														: "text-slate-400 hover:text-slate-100",
-												)}
-											>
-												720p
-											</button>
-											<button
-												type="button"
-												onClick={() => onExportQualityChange("good")}
-												className={cn(
-													"rounded-md py-1.5 text-xs font-semibold transition",
-													exportQuality === "good"
-														? "bg-white text-black"
-														: "text-slate-400 hover:text-slate-100",
-												)}
-											>
-												1080p
-											</button>
-											<button
-												type="button"
-												onClick={() => onExportQualityChange("source")}
-												className={cn(
-													"rounded-md py-1.5 text-xs font-semibold transition",
-													exportQuality === "source"
-														? "bg-white text-black"
-														: "text-slate-400 hover:text-slate-100",
-												)}
-											>
-												4K
-											</button>
-										</div>
-									</section>
-
-									<section>
-										<div className="mb-2 text-xs font-semibold text-slate-200">Quality</div>
-										<div className="grid grid-cols-3 gap-2 rounded-lg border border-white/10 bg-black/25 p-1">
-											<button
-												type="button"
-												onClick={() => onExportQualityChange("medium")}
-												className={cn(
-													"rounded-md py-1.5 text-[11px] font-medium transition",
-													exportQuality === "medium"
-														? "bg-white text-black"
-														: "text-slate-400 hover:text-slate-100",
-												)}
-											>
-												Potato
-											</button>
-											<button
-												type="button"
-												onClick={() => onExportQualityChange("good")}
-												className={cn(
-													"rounded-md py-1.5 text-[11px] font-medium transition",
-													exportQuality === "good"
-														? "bg-white text-black"
-														: "text-slate-400 hover:text-slate-100",
-												)}
-											>
-												Web
-											</button>
-											<button
-												type="button"
-												onClick={() => onExportQualityChange("source")}
-												className={cn(
-													"rounded-md py-1.5 text-[11px] font-medium transition",
-													exportQuality === "source"
-														? "bg-white text-black"
-														: "text-slate-400 hover:text-slate-100",
-												)}
-											>
-												Maximum
-											</button>
-										</div>
-									</section>
-								</>
+								<section>
+									<div className="mb-2 text-xs font-semibold text-slate-200">Resolution</div>
+									<div className="grid grid-cols-3 gap-2 rounded-lg border border-white/10 bg-black/25 p-1">
+										<button
+											type="button"
+											onClick={() => onExportQualityChange("medium")}
+											className={cn(
+												"rounded-md py-1.5 text-xs font-semibold transition",
+												exportQuality === "medium"
+													? "bg-white text-black"
+													: "text-slate-400 hover:text-slate-100",
+											)}
+										>
+											720p
+										</button>
+										<button
+											type="button"
+											onClick={() => onExportQualityChange("good")}
+											className={cn(
+												"rounded-md py-1.5 text-xs font-semibold transition",
+												exportQuality === "good"
+													? "bg-white text-black"
+													: "text-slate-400 hover:text-slate-100",
+											)}
+										>
+											1080p
+										</button>
+										<button
+											type="button"
+											onClick={() => onExportQualityChange("source")}
+											className={cn(
+												"rounded-md py-1.5 text-xs font-semibold transition",
+												exportQuality === "source"
+													? "bg-white text-black"
+													: "text-slate-400 hover:text-slate-100",
+											)}
+										>
+											Source
+										</button>
+									</div>
+								</section>
 							)}
 
 							{exportFormat === "gif" && (
@@ -492,23 +458,6 @@ export function ExportPage({
 									</section>
 								</>
 							)}
-
-							<section>
-								<div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-200">
-									<span>Advanced</span>
-									<span className="text-[11px] font-mono text-slate-400">
-										{exportFormat === "mp4" ? "0.50" : "GIF"}
-									</span>
-								</div>
-								<Slider
-									value={[exportFormat === "mp4" ? 0.5 : 1]}
-									min={0.1}
-									max={1}
-									step={0.01}
-									disabled
-									className="w-full"
-								/>
-							</section>
 						</div>
 					</div>
 					<div className="border-t border-white/10 p-3">
