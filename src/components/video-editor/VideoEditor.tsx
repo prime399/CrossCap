@@ -4,6 +4,8 @@ import {
 	Crop,
 	Export,
 	FilmSlate,
+	FloppyDisk,
+	FolderOpen,
 	FrameCorners,
 	Minus,
 	Square,
@@ -903,6 +905,24 @@ export default function VideoEditor() {
 					</span>
 					<Button
 						type="button"
+						variant="ghost"
+						onClick={handleLoadProject}
+						className="h-8 gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white"
+					>
+						<FolderOpen size={13} />
+						Load
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						onClick={handleSaveProject}
+						className="h-8 gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 text-xs text-slate-300 hover:bg-white/10 hover:text-white"
+					>
+						<FloppyDisk size={13} />
+						Save
+					</Button>
+					<Button
+						type="button"
 						onClick={() => setActiveView("export")}
 						className="h-8 gap-1.5 rounded-full bg-cc-accent px-3 text-xs font-semibold text-white hover:bg-cc-accent/90"
 					>
@@ -1121,9 +1141,6 @@ export default function VideoEditor() {
 										onAnnotationStyleChange={store.updateAnnotationStyle}
 										onAnnotationFigureDataChange={store.updateAnnotationFigureData}
 										onAnnotationDelete={store.deleteAnnotationRegion}
-										onSaveProject={handleSaveProject}
-										onLoadProject={handleLoadProject}
-										onOpenExportPage={() => setActiveView("export")}
 										customImages={store.background.customImages}
 										onCustomImageAdd={store.addCustomImage}
 										onCustomImageRemove={store.removeCustomImage}

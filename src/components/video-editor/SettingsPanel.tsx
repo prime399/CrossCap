@@ -1,8 +1,5 @@
 import {
 	Cursor,
-	Export,
-	FloppyDisk,
-	FolderOpen,
 	Image,
 	MagnifyingGlass,
 	Palette,
@@ -76,9 +73,6 @@ interface SettingsPanelProps {
 	onCropChange?: (region: CropRegion) => void;
 	aspectRatio: AspectRatio;
 	videoElement?: HTMLVideoElement | null;
-	onSaveProject?: () => void;
-	onLoadProject?: () => void;
-	onOpenExportPage?: () => void;
 	selectedAnnotationId?: string | null;
 	annotationRegions?: AnnotationRegion[];
 	onAnnotationContentChange?: (id: string, content: string) => void;
@@ -160,9 +154,6 @@ export function SettingsPanel({
 	onCropChange,
 	aspectRatio,
 	videoElement,
-	onSaveProject,
-	onLoadProject,
-	onOpenExportPage,
 	selectedAnnotationId,
 	annotationRegions = [],
 	onAnnotationContentChange,
@@ -332,37 +323,6 @@ export function SettingsPanel({
 
 					<div className="mb-3 flex items-center justify-between gap-2 border-b border-white/10 pb-2">
 						<p className="text-sm font-semibold text-slate-100">{activeTabLabel}</p>
-						<div className="flex items-center gap-1.5">
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								onClick={onLoadProject}
-								className="h-7 gap-1 rounded-md border-white/10 bg-white/[0.03] px-2 text-[10px] text-slate-300 hover:bg-white/10 hover:text-white"
-							>
-								<FolderOpen size={12} />
-								Load
-							</Button>
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								onClick={onSaveProject}
-								className="h-7 gap-1 rounded-md border-white/10 bg-white/[0.03] px-2 text-[10px] text-slate-300 hover:bg-white/10 hover:text-white"
-							>
-								<FloppyDisk size={12} />
-								Save
-							</Button>
-							<Button
-								type="button"
-								size="sm"
-								onClick={onOpenExportPage}
-								className="h-7 gap-1 rounded-md bg-cc-accent px-2 text-[10px] font-semibold text-white hover:bg-cc-accent/90"
-							>
-								<Export size={12} />
-								Export
-							</Button>
-						</div>
 					</div>
 
 					<TabsContent
