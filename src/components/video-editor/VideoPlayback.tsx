@@ -52,9 +52,16 @@ interface VideoPlaybackProps {
 	isPlaying: boolean;
 	showShadow?: boolean;
 	shadowIntensity?: number;
+	shadowSize?: number;
+	shadowOpacity?: number;
+	shadowBlur?: number;
 	showBlur?: boolean;
 	motionBlurEnabled?: boolean;
 	borderRadius?: number;
+	borderEnabled?: boolean;
+	borderWidth?: number;
+	borderColor?: string;
+	borderOpacity?: number;
 	padding?: number;
 	cropRegion?: import("./types").CropRegion;
 	trimRegions?: TrimRegion[];
@@ -76,6 +83,23 @@ export interface VideoPlaybackRef {
 	pause: () => void;
 }
 
+function hexToRgba(hexColor: string, opacity: number): string {
+	const hex = hexColor.trim().replace("#", "");
+	const fullHex =
+		hex.length === 3
+			? hex
+					.split("")
+					.map((ch) => `${ch}${ch}`)
+					.join("")
+			: hex.padEnd(6, "0");
+	const parsed = Number.parseInt(fullHex.slice(0, 6), 16);
+	if (Number.isNaN(parsed)) return `rgba(0,0,0,${opacity})`;
+	const r = (parsed >> 16) & 255;
+	const g = (parsed >> 8) & 255;
+	const b = parsed & 255;
+	return `rgba(${r},${g},${b},${opacity})`;
+}
+
 const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 	(
 		{
@@ -93,9 +117,16 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			isPlaying,
 			showShadow,
 			shadowIntensity = 0,
+			shadowSize = 0.4,
+			shadowOpacity = 0.6,
+			shadowBlur = 0.45,
 			showBlur,
 			motionBlurEnabled = false,
 			borderRadius = 0,
+			borderEnabled = false,
+			borderWidth = 2,
+			borderColor = "#000000",
+			borderOpacity = 0.85,
 			padding = 50,
 			cropRegion,
 			trimRegions = [],
@@ -117,6 +148,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		const timeUpdateAnimationRef = useRef<number | null>(null);
 		const [pixiReady, setPixiReady] = useState(false);
 		const [videoReady, setVideoReady] = useState(false);
+		const [frameRect, setFrameRect] = useState({ x: 0, y: 0, width: 0, height: 0 });
 		const overlayRef = useRef<HTMLDivElement | null>(null);
 		const focusIndicatorRef = useRef<HTMLDivElement | null>(null);
 		const currentTimeRef = useRef(0);
@@ -227,6 +259,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				baseScaleRef.current = result.baseScale;
 				baseOffsetRef.current = result.baseOffset;
 				baseMaskRef.current = result.maskRect;
+				setFrameRect(result.maskRect);
 				cropBoundsRef.current = result.cropBounds;
 
 				// Reset camera container to identity
@@ -335,7 +368,9 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			isDraggingFocusRef.current = false;
 			try {
 				event.currentTarget.releasePointerCapture(event.pointerId);
-			} catch {}
+			} catch {
+				// ignore pointer capture cleanup failures
+			}
 		};
 
 		const handleOverlayPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -429,7 +464,9 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				requestAnimationFrame(() => {
 					const finalApp = appRef.current;
 					if (wasPlaying && video) {
-						video.play().catch(() => {});
+						video.play().catch(() => {
+							// ignore resume errors on teardown race
+						});
 					}
 					if (tickerWasStarted && finalApp?.ticker) {
 						finalApp.ticker.start();
@@ -818,7 +855,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					}
 					const p = await getAssetPath(wallpaper.replace(/^\//, ""));
 					if (mounted) setResolvedWallpaper(p);
-				} catch (err) {
+				} catch (_err) {
 					if (mounted) setResolvedWallpaper(wallpaper || "/wallpapers/wallpaper1.jpg");
 				}
 			})();
@@ -847,6 +884,11 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			? { backgroundImage: `url(${resolvedWallpaper || ""})` }
 			: { background: resolvedWallpaper || "" };
 
+		const shadowYOffset = Math.round(4 + shadowSize * 18);
+		const shadowBlurPx = Math.round(10 + shadowBlur * 64);
+		const shadowAlpha = Math.max(0, Math.min(1, shadowOpacity * shadowIntensity));
+		const borderColorRgba = hexToRgba(borderColor, borderOpacity);
+
 		return (
 			<div
 				className="relative rounded-sm overflow-hidden"
@@ -866,10 +908,23 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					style={{
 						filter:
 							showShadow && shadowIntensity > 0
-								? `drop-shadow(0 ${shadowIntensity * 12}px ${shadowIntensity * 48}px rgba(0,0,0,${shadowIntensity * 0.7})) drop-shadow(0 ${shadowIntensity * 4}px ${shadowIntensity * 16}px rgba(0,0,0,${shadowIntensity * 0.5})) drop-shadow(0 ${shadowIntensity * 2}px ${shadowIntensity * 8}px rgba(0,0,0,${shadowIntensity * 0.3}))`
+								? `drop-shadow(0 ${shadowYOffset}px ${shadowBlurPx}px rgba(0,0,0,${shadowAlpha})) drop-shadow(0 ${Math.max(1, Math.round(shadowYOffset * 0.45))}px ${Math.max(4, Math.round(shadowBlurPx * 0.42))}px rgba(0,0,0,${shadowAlpha * 0.72}))`
 								: "none",
 					}}
 				/>
+				{borderEnabled && frameRect.width > 0 && frameRect.height > 0 && (
+					<div
+						className="absolute pointer-events-none"
+						style={{
+							left: frameRect.x,
+							top: frameRect.y,
+							width: frameRect.width,
+							height: frameRect.height,
+							borderRadius,
+							border: `${Math.max(0, borderWidth)}px solid ${borderColorRgba}`,
+						}}
+					/>
+				)}
 				{/* Only render overlay after PIXI and video are fully initialized */}
 				{pixiReady && videoReady && (
 					<div

@@ -140,9 +140,17 @@ interface ProjectActions {
 		currentProjectPath: string | null;
 		wallpaper: string;
 		shadowIntensity: number;
+		shadowSize: number;
+		shadowOpacity: number;
+		shadowBlur: number;
 		showBlur: boolean;
 		motionBlurEnabled: boolean;
 		borderRadius: number;
+		cornerStyle: VideoEditorEffects["cornerStyle"];
+		borderEnabled: boolean;
+		borderWidth: number;
+		borderColor: string;
+		borderOpacity: number;
 		padding: number;
 		cropRegion: CropRegion;
 		zoomRegions: ZoomRegion[];
@@ -539,9 +547,17 @@ export const useEditorStore = create<EditorStore>()(
 					nextAnnotationZIndex: maxZIndex + 1,
 					effects: {
 						shadowIntensity: project.shadowIntensity,
+						shadowSize: project.shadowSize,
+						shadowOpacity: project.shadowOpacity,
+						shadowBlur: project.shadowBlur,
 						blurBgEnabled: project.showBlur,
 						motionBlurEnabled: project.motionBlurEnabled,
 						borderRadius: project.borderRadius,
+						cornerStyle: project.cornerStyle,
+						borderEnabled: project.borderEnabled,
+						borderWidth: project.borderWidth,
+						borderColor: project.borderColor,
+						borderOpacity: project.borderOpacity,
 						padding: project.padding,
 					},
 					background: {

@@ -1,7 +1,4 @@
 import * as v from "valibot";
-import type { ExportFormat, ExportQuality, GifFrameRate, GifSizePreset } from "@/lib/exporter";
-import type { AspectRatio } from "@/utils/aspectRatioUtils";
-import { WALLPAPER_PATHS } from "@/constants/wallpapers";
 import type {
 	AnnotationRegion,
 	CropRegion,
@@ -16,9 +13,15 @@ import {
 	DEFAULT_FIGURE_DATA,
 	DEFAULT_ZOOM_DEPTH,
 } from "@/components/video-editor/types";
+import { WALLPAPER_PATHS } from "@/constants/wallpapers";
+import type { ExportFormat, ExportQuality, GifFrameRate, GifSizePreset } from "@/lib/exporter";
+import type { AspectRatio } from "@/utils/aspectRatioUtils";
 
 const finiteNumber = (fallback: number) =>
-	v.pipe(v.unknown(), v.transform((val) => (typeof val === "number" && Number.isFinite(val) ? val : fallback)));
+	v.pipe(
+		v.unknown(),
+		v.transform((val) => (typeof val === "number" && Number.isFinite(val) ? val : fallback)),
+	);
 
 const clamp = (val: number, min: number, max: number) => Math.min(max, Math.max(min, val));
 
@@ -89,12 +92,23 @@ const AnnotationRegionSchema = v.pipe(
 			v.unknown(),
 			v.transform((val) => (val === "image" || val === "figure" ? val : ("text" as const))),
 		),
-		content: v.optional(v.pipe(v.unknown(), v.transform((val) => (typeof val === "string" ? val : "")))),
+		content: v.optional(
+			v.pipe(
+				v.unknown(),
+				v.transform((val) => (typeof val === "string" ? val : "")),
+			),
+		),
 		textContent: v.optional(
-			v.pipe(v.unknown(), v.transform((val) => (typeof val === "string" ? val : undefined))),
+			v.pipe(
+				v.unknown(),
+				v.transform((val) => (typeof val === "string" ? val : undefined)),
+			),
 		),
 		imageContent: v.optional(
-			v.pipe(v.unknown(), v.transform((val) => (typeof val === "string" ? val : undefined))),
+			v.pipe(
+				v.unknown(),
+				v.transform((val) => (typeof val === "string" ? val : undefined)),
+			),
 		),
 		position: v.optional(
 			v.object({
@@ -108,12 +122,19 @@ const AnnotationRegionSchema = v.pipe(
 				height: finiteNumber(DEFAULT_ANNOTATION_SIZE.height),
 			}),
 		),
-		style: v.optional(v.pipe(v.unknown(), v.transform((val) => (val && typeof val === "object" ? val : {})))),
+		style: v.optional(
+			v.pipe(
+				v.unknown(),
+				v.transform((val) => (val && typeof val === "object" ? val : {})),
+			),
+		),
 		zIndex: v.optional(finiteNumber(0)),
 		figureData: v.optional(
 			v.pipe(
 				v.unknown(),
-				v.transform((val) => (val && typeof val === "object" ? { ...DEFAULT_FIGURE_DATA, ...val } : undefined)),
+				v.transform((val) =>
+					val && typeof val === "object" ? { ...DEFAULT_FIGURE_DATA, ...val } : undefined,
+				),
 			),
 		),
 	}),
@@ -168,24 +189,107 @@ const VALID_GIF_SIZE_PRESETS = ["medium", "large", "original"] as const;
 
 const EditorSchema = v.object({
 	wallpaper: v.optional(
-		v.pipe(v.unknown(), v.transform((val) => (typeof val === "string" ? val : WALLPAPER_PATHS[0]))),
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (typeof val === "string" ? val : WALLPAPER_PATHS[0])),
+		),
 		WALLPAPER_PATHS[0],
 	),
 	shadowIntensity: v.optional(
-		v.pipe(v.unknown(), v.transform((val) => (typeof val === "number" ? val : 0))),
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (typeof val === "number" ? val : 0)),
+		),
 		0,
 	),
+	shadowSize: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) =>
+				typeof val === "number" && Number.isFinite(val) ? clamp(val, 0, 1) : 0.4,
+			),
+		),
+		0.4,
+	),
+	shadowOpacity: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) =>
+				typeof val === "number" && Number.isFinite(val) ? clamp(val, 0, 1) : 0.6,
+			),
+		),
+		0.6,
+	),
+	shadowBlur: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) =>
+				typeof val === "number" && Number.isFinite(val) ? clamp(val, 0, 1) : 0.45,
+			),
+		),
+		0.45,
+	),
 	showBlur: v.optional(
-		v.pipe(v.unknown(), v.transform((val) => (typeof val === "boolean" ? val : false))),
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (typeof val === "boolean" ? val : false)),
+		),
 		false,
 	),
 	motionBlurEnabled: v.optional(
-		v.pipe(v.unknown(), v.transform((val) => (typeof val === "boolean" ? val : false))),
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (typeof val === "boolean" ? val : false)),
+		),
 		false,
 	),
 	borderRadius: v.optional(
-		v.pipe(v.unknown(), v.transform((val) => (typeof val === "number" ? val : 0))),
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (typeof val === "number" ? val : 0)),
+		),
 		0,
+	),
+	cornerStyle: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) =>
+				val === "rounded" || val === "squircle" || val === "sharp" ? val : "squircle",
+			),
+		),
+		"squircle",
+	),
+	borderEnabled: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (typeof val === "boolean" ? val : false)),
+		),
+		false,
+	),
+	borderWidth: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) =>
+				typeof val === "number" && Number.isFinite(val) ? clamp(val, 0, 24) : 2,
+			),
+		),
+		2,
+	),
+	borderColor: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (typeof val === "string" ? val : "#000000")),
+		),
+		"#000000",
+	),
+	borderOpacity: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) =>
+				typeof val === "number" && Number.isFinite(val) ? clamp(val, 0, 1) : 0.85,
+			),
+		),
+		0.85,
 	),
 	padding: v.optional(
 		v.pipe(
@@ -197,9 +301,24 @@ const EditorSchema = v.object({
 		50,
 	),
 	cropRegion: v.optional(CropRegionSchema),
-	zoomRegions: v.optional(v.pipe(v.unknown(), v.transform((val) => (Array.isArray(val) ? val : [])))),
-	trimRegions: v.optional(v.pipe(v.unknown(), v.transform((val) => (Array.isArray(val) ? val : [])))),
-	annotationRegions: v.optional(v.pipe(v.unknown(), v.transform((val) => (Array.isArray(val) ? val : [])))),
+	zoomRegions: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (Array.isArray(val) ? val : [])),
+		),
+	),
+	trimRegions: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (Array.isArray(val) ? val : [])),
+		),
+	),
+	annotationRegions: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (Array.isArray(val) ? val : [])),
+		),
+	),
 	aspectRatio: v.optional(
 		v.pipe(
 			v.unknown(),
@@ -245,7 +364,10 @@ const EditorSchema = v.object({
 		15,
 	),
 	gifLoop: v.optional(
-		v.pipe(v.unknown(), v.transform((val) => (typeof val === "boolean" ? val : true))),
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (typeof val === "boolean" ? val : true)),
+		),
 		true,
 	),
 	gifSizePreset: v.optional(
@@ -270,15 +392,30 @@ export const ProjectDataSchema = v.object({
 export type ProjectData = v.InferOutput<typeof ProjectDataSchema>;
 
 function filterWithId(items: unknown[]): unknown[] {
-	return items.filter((item) => Boolean(item && typeof item === "object" && "id" in item && typeof (item as { id: unknown }).id === "string"));
+	return items.filter((item) =>
+		Boolean(
+			item &&
+				typeof item === "object" &&
+				"id" in item &&
+				typeof (item as { id: unknown }).id === "string",
+		),
+	);
 }
 
 export interface ParsedEditor {
 	wallpaper: string;
 	shadowIntensity: number;
+	shadowSize: number;
+	shadowOpacity: number;
+	shadowBlur: number;
 	showBlur: boolean;
 	motionBlurEnabled: boolean;
 	borderRadius: number;
+	cornerStyle: "rounded" | "squircle" | "sharp";
+	borderEnabled: boolean;
+	borderWidth: number;
+	borderColor: string;
+	borderOpacity: number;
 	padding: number;
 	cropRegion: CropRegion;
 	zoomRegions: ZoomRegion[];
@@ -301,22 +438,28 @@ export function parseProjectEditor(raw: unknown): ParsedEditor {
 	const trimRegions = filterWithId(parsed.trimRegions as unknown[]).map(
 		(r) => v.parse(TrimRegionSchema, r) as unknown as TrimRegion,
 	);
-	const annotationRegions = filterWithId(parsed.annotationRegions as unknown[]).map(
-		(r, index) => {
-			const region = v.parse(AnnotationRegionSchema, r) as unknown as AnnotationRegion;
-			if (region.zIndex === 1 && r && typeof r === "object" && !("zIndex" in r)) {
-				return { ...region, zIndex: index + 1 };
-			}
-			return region;
-		},
-	);
+	const annotationRegions = filterWithId(parsed.annotationRegions as unknown[]).map((r, index) => {
+		const region = v.parse(AnnotationRegionSchema, r) as unknown as AnnotationRegion;
+		if (region.zIndex === 1 && r && typeof r === "object" && !("zIndex" in r)) {
+			return { ...region, zIndex: index + 1 };
+		}
+		return region;
+	});
 
 	return {
 		wallpaper: parsed.wallpaper,
 		shadowIntensity: parsed.shadowIntensity,
+		shadowSize: parsed.shadowSize,
+		shadowOpacity: parsed.shadowOpacity,
+		shadowBlur: parsed.shadowBlur,
 		showBlur: parsed.showBlur,
 		motionBlurEnabled: parsed.motionBlurEnabled,
 		borderRadius: parsed.borderRadius,
+		cornerStyle: parsed.cornerStyle,
+		borderEnabled: parsed.borderEnabled,
+		borderWidth: parsed.borderWidth,
+		borderColor: parsed.borderColor,
+		borderOpacity: parsed.borderOpacity,
 		padding: parsed.padding,
 		cropRegion: parsed.cropRegion ?? DEFAULT_CROP_REGION,
 		zoomRegions,

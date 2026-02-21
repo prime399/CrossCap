@@ -149,7 +149,15 @@ export interface VideoEditorEffects {
 	motionBlurEnabled: boolean;
 	blurBgEnabled: boolean;
 	shadowIntensity: number;
+	shadowSize: number;
+	shadowOpacity: number;
+	shadowBlur: number;
 	borderRadius: number;
+	cornerStyle: "rounded" | "squircle" | "sharp";
+	borderEnabled: boolean;
+	borderWidth: number;
+	borderColor: string;
+	borderOpacity: number;
 	padding: number;
 }
 
@@ -212,7 +220,15 @@ export const DEFAULT_VIDEO_EDITOR_EFFECTS: VideoEditorEffects = {
 	motionBlurEnabled: false,
 	blurBgEnabled: false,
 	shadowIntensity: 0,
+	shadowSize: 0.4,
+	shadowOpacity: 0.6,
+	shadowBlur: 0.45,
 	borderRadius: 0,
+	cornerStyle: "squircle",
+	borderEnabled: false,
+	borderWidth: 2,
+	borderColor: "#000000",
+	borderOpacity: 0.85,
 	padding: 50,
 };
 

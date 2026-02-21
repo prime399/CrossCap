@@ -76,9 +76,17 @@ export default function VideoEditor() {
 
 	const wallpaper = useEditorStore((s) => s.background.value);
 	const shadowIntensity = useEditorStore((s) => s.effects.shadowIntensity);
+	const shadowSize = useEditorStore((s) => s.effects.shadowSize);
+	const shadowOpacity = useEditorStore((s) => s.effects.shadowOpacity);
+	const shadowBlur = useEditorStore((s) => s.effects.shadowBlur);
 	const showBlur = useEditorStore((s) => s.effects.blurBgEnabled);
 	const motionBlurEnabled = useEditorStore((s) => s.effects.motionBlurEnabled);
 	const borderRadius = useEditorStore((s) => s.effects.borderRadius);
+	const cornerStyle = useEditorStore((s) => s.effects.cornerStyle);
+	const borderEnabled = useEditorStore((s) => s.effects.borderEnabled);
+	const borderWidth = useEditorStore((s) => s.effects.borderWidth);
+	const borderColor = useEditorStore((s) => s.effects.borderColor);
+	const borderOpacity = useEditorStore((s) => s.effects.borderOpacity);
 	const padding = useEditorStore((s) => s.effects.padding);
 	const cropRegion = useEditorStore((s) => s.regions.cropRegion);
 	const zoomRegions = useEditorStore((s) => s.regions.zoomRegions);
@@ -101,6 +109,18 @@ export default function VideoEditor() {
 		(value: number) => store.setEffects({ shadowIntensity: value }),
 		[store.setEffects],
 	);
+	const setShadowSize = useCallback(
+		(value: number) => store.setEffects({ shadowSize: value }),
+		[store.setEffects],
+	);
+	const setShadowOpacity = useCallback(
+		(value: number) => store.setEffects({ shadowOpacity: value }),
+		[store.setEffects],
+	);
+	const setShadowBlur = useCallback(
+		(value: number) => store.setEffects({ shadowBlur: value }),
+		[store.setEffects],
+	);
 	const setShowBlur = useCallback(
 		(value: boolean) => store.setEffects({ blurBgEnabled: value }),
 		[store.setEffects],
@@ -111,6 +131,26 @@ export default function VideoEditor() {
 	);
 	const setBorderRadius = useCallback(
 		(value: number) => store.setEffects({ borderRadius: value }),
+		[store.setEffects],
+	);
+	const setCornerStyle = useCallback(
+		(value: "rounded" | "squircle" | "sharp") => store.setEffects({ cornerStyle: value }),
+		[store.setEffects],
+	);
+	const setBorderEnabled = useCallback(
+		(value: boolean) => store.setEffects({ borderEnabled: value }),
+		[store.setEffects],
+	);
+	const setBorderWidth = useCallback(
+		(value: number) => store.setEffects({ borderWidth: value }),
+		[store.setEffects],
+	);
+	const setBorderColor = useCallback(
+		(value: string) => store.setEffects({ borderColor: value }),
+		[store.setEffects],
+	);
+	const setBorderOpacity = useCallback(
+		(value: number) => store.setEffects({ borderOpacity: value }),
 		[store.setEffects],
 	);
 	const setPadding = useCallback(
@@ -229,9 +269,17 @@ export default function VideoEditor() {
 				editor: {
 					wallpaper,
 					shadowIntensity,
+					shadowSize,
+					shadowOpacity,
+					shadowBlur,
 					showBlur,
 					motionBlurEnabled,
 					borderRadius,
+					cornerStyle,
+					borderEnabled,
+					borderWidth,
+					borderColor,
+					borderOpacity,
 					padding,
 					cropRegion,
 					zoomRegions,
@@ -279,9 +327,17 @@ export default function VideoEditor() {
 			currentProjectPath,
 			wallpaper,
 			shadowIntensity,
+			shadowSize,
+			shadowOpacity,
+			shadowBlur,
 			showBlur,
 			motionBlurEnabled,
 			borderRadius,
+			cornerStyle,
+			borderEnabled,
+			borderWidth,
+			borderColor,
+			borderOpacity,
 			padding,
 			cropRegion,
 			zoomRegions,
@@ -342,9 +398,17 @@ export default function VideoEditor() {
 			currentProjectPath: result.path ?? null,
 			wallpaper: editor.wallpaper,
 			shadowIntensity: editor.shadowIntensity,
+			shadowSize: editor.shadowSize,
+			shadowOpacity: editor.shadowOpacity,
+			shadowBlur: editor.shadowBlur,
 			showBlur: editor.showBlur,
 			motionBlurEnabled: editor.motionBlurEnabled,
 			borderRadius: editor.borderRadius,
+			cornerStyle: editor.cornerStyle,
+			borderEnabled: editor.borderEnabled,
+			borderWidth: editor.borderWidth,
+			borderColor: editor.borderColor,
+			borderOpacity: editor.borderOpacity,
 			padding: editor.padding,
 			cropRegion: editor.cropRegion,
 			zoomRegions: editor.zoomRegions,
@@ -665,6 +729,9 @@ export default function VideoEditor() {
 		);
 	}
 
+	const effectiveBorderRadius =
+		cornerStyle === "sharp" ? 0 : cornerStyle === "squircle" ? borderRadius * 1.45 : borderRadius;
+
 	return (
 		<div className="flex h-screen flex-col overflow-hidden bg-cc-surface-0 text-[hsl(var(--cc-text-primary))] selection:bg-cc-accent/30">
 			<div
@@ -777,9 +844,16 @@ export default function VideoEditor() {
 												isPlaying={isPlaying}
 												showShadow={shadowIntensity > 0}
 												shadowIntensity={shadowIntensity}
+												shadowSize={shadowSize}
+												shadowOpacity={shadowOpacity}
+												shadowBlur={shadowBlur}
 												showBlur={showBlur}
 												motionBlurEnabled={motionBlurEnabled}
-												borderRadius={borderRadius}
+												borderRadius={effectiveBorderRadius}
+												borderEnabled={borderEnabled}
+												borderWidth={borderWidth}
+												borderColor={borderColor}
+												borderOpacity={borderOpacity}
 												padding={padding}
 												cropRegion={cropRegion}
 												trimRegions={trimRegions}
@@ -830,12 +904,28 @@ export default function VideoEditor() {
 										onTrimDelete={store.deleteTrimRegion}
 										shadowIntensity={shadowIntensity}
 										onShadowChange={setShadowIntensity}
+										shadowSize={shadowSize}
+										onShadowSizeChange={setShadowSize}
+										shadowOpacity={shadowOpacity}
+										onShadowOpacityChange={setShadowOpacity}
+										shadowBlur={shadowBlur}
+										onShadowBlurChange={setShadowBlur}
 										showBlur={showBlur}
 										onBlurChange={setShowBlur}
 										motionBlurEnabled={motionBlurEnabled}
 										onMotionBlurChange={setMotionBlurEnabled}
 										borderRadius={borderRadius}
 										onBorderRadiusChange={setBorderRadius}
+										cornerStyle={cornerStyle}
+										onCornerStyleChange={setCornerStyle}
+										borderEnabled={borderEnabled}
+										onBorderEnabledChange={setBorderEnabled}
+										borderWidth={borderWidth}
+										onBorderWidthChange={setBorderWidth}
+										borderColor={borderColor}
+										onBorderColorChange={setBorderColor}
+										borderOpacity={borderOpacity}
+										onBorderOpacityChange={setBorderOpacity}
 										padding={padding}
 										onPaddingChange={setPadding}
 										cropRegion={cropRegion}

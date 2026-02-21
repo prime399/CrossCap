@@ -53,12 +53,28 @@ interface SettingsPanelProps {
 	onTrimDelete?: (id: string) => void;
 	shadowIntensity?: number;
 	onShadowChange?: (intensity: number) => void;
+	shadowSize?: number;
+	onShadowSizeChange?: (value: number) => void;
+	shadowOpacity?: number;
+	onShadowOpacityChange?: (value: number) => void;
+	shadowBlur?: number;
+	onShadowBlurChange?: (value: number) => void;
 	showBlur?: boolean;
 	onBlurChange?: (showBlur: boolean) => void;
 	motionBlurEnabled?: boolean;
 	onMotionBlurChange?: (enabled: boolean) => void;
 	borderRadius?: number;
 	onBorderRadiusChange?: (radius: number) => void;
+	cornerStyle?: "rounded" | "squircle" | "sharp";
+	onCornerStyleChange?: (style: "rounded" | "squircle" | "sharp") => void;
+	borderEnabled?: boolean;
+	onBorderEnabledChange?: (enabled: boolean) => void;
+	borderWidth?: number;
+	onBorderWidthChange?: (width: number) => void;
+	borderColor?: string;
+	onBorderColorChange?: (color: string) => void;
+	borderOpacity?: number;
+	onBorderOpacityChange?: (opacity: number) => void;
 	padding?: number;
 	onPaddingChange?: (padding: number) => void;
 	cropRegion?: CropRegion;
@@ -133,12 +149,28 @@ export function SettingsPanel({
 	onTrimDelete,
 	shadowIntensity = 0,
 	onShadowChange,
+	shadowSize = 0.4,
+	onShadowSizeChange,
+	shadowOpacity = 0.6,
+	onShadowOpacityChange,
+	shadowBlur = 0.45,
+	onShadowBlurChange,
 	showBlur,
 	onBlurChange,
 	motionBlurEnabled = false,
 	onMotionBlurChange,
 	borderRadius = 0,
 	onBorderRadiusChange,
+	cornerStyle = "squircle",
+	onCornerStyleChange,
+	borderEnabled = false,
+	onBorderEnabledChange,
+	borderWidth = 2,
+	onBorderWidthChange,
+	borderColor = "#000000",
+	onBorderColorChange,
+	borderOpacity = 0.85,
+	onBorderOpacityChange,
 	padding = 50,
 	onPaddingChange,
 	cropRegion,
@@ -321,40 +353,42 @@ export function SettingsPanel({
 		<div className="flex h-full min-w-0 flex-[2] flex-col overflow-hidden rounded-2xl border border-[hsl(var(--cc-border-strong))]/75 bg-gradient-to-b from-[#0f141d] via-[#0c1119] to-[#090d13] shadow-[0_20px_48px_rgba(2,8,23,0.55)] backdrop-blur-xl">
 			<div className="custom-scrollbar flex-1 overflow-y-auto p-3.5 pb-0">
 				<Tabs value={activeSettingsTab} onValueChange={setActiveSettingsTab} className="w-full">
-					<TabsList className="mb-3.5 grid h-11 w-full grid-cols-4 rounded-xl border border-white/10 bg-black/35 p-1">
-						<TabsTrigger
-							value="effects"
-							className="rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
-							title="Effects"
-						>
-							<Sparkle size={16} weight="duotone" />
-							<span>Effects</span>
-						</TabsTrigger>
-						<TabsTrigger
-							value="background"
-							className="rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
-							title="Background"
-						>
-							<Image size={16} weight="duotone" />
-							<span>Background</span>
-						</TabsTrigger>
-						<TabsTrigger
-							value="zoom"
-							className="rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
-							title="Zoom"
-						>
-							<MagnifyingGlass size={16} weight="duotone" />
-							<span>Zoom</span>
-						</TabsTrigger>
-						<TabsTrigger
-							value="cursor"
-							className="rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
-							title="Cursor"
-						>
-							<Cursor size={16} weight="duotone" />
-							<span>Cursor</span>
-						</TabsTrigger>
-					</TabsList>
+					<div className="custom-scrollbar mb-3.5 overflow-x-auto">
+						<TabsList className="inline-flex h-11 min-w-full rounded-xl border border-white/10 bg-black/35 p-1">
+							<TabsTrigger
+								value="effects"
+								className="min-w-14 rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
+								title="Effects"
+							>
+								<Sparkle size={16} weight="duotone" />
+								<span>Effects</span>
+							</TabsTrigger>
+							<TabsTrigger
+								value="background"
+								className="min-w-14 rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
+								title="Background"
+							>
+								<Image size={16} weight="duotone" />
+								<span>Background</span>
+							</TabsTrigger>
+							<TabsTrigger
+								value="zoom"
+								className="min-w-14 rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
+								title="Zoom"
+							>
+								<MagnifyingGlass size={16} weight="duotone" />
+								<span>Zoom</span>
+							</TabsTrigger>
+							<TabsTrigger
+								value="cursor"
+								className="min-w-14 rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
+								title="Cursor"
+							>
+								<Cursor size={16} weight="duotone" />
+								<span>Cursor</span>
+							</TabsTrigger>
+						</TabsList>
+					</div>
 					<div className="mb-3 border-b border-white/10 pb-2">
 						<p className="text-sm font-semibold text-slate-100">{activeTabLabel}</p>
 					</div>
@@ -364,28 +398,131 @@ export function SettingsPanel({
 						className="mt-0 space-y-2.5 animate-in fade-in-50 slide-in-from-bottom-1 duration-200"
 					>
 						<div className="space-y-2">
-							<div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-								<div className="text-[11px] font-medium text-slate-300">Motion Blur</div>
-								<Switch
-									checked={motionBlurEnabled}
-									onCheckedChange={onMotionBlurChange}
-									className="data-[state=checked]:bg-cc-accent scale-90"
+							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+								<div className="mb-1.5 flex items-center justify-between">
+									<div className="text-[11px] font-semibold text-slate-200">Padding</div>
+									<span className="font-mono text-[10px] text-slate-500">{padding}%</span>
+								</div>
+								<Slider
+									value={[padding]}
+									onValueChange={(values) => onPaddingChange?.(values[0])}
+									min={0}
+									max={100}
+									step={1}
+									className="w-full"
 								/>
 							</div>
-							<div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-								<div className="text-[11px] font-medium text-slate-300">Blur BG</div>
-								<Switch
-									checked={showBlur}
-									onCheckedChange={onBlurChange}
-									className="data-[state=checked]:bg-cc-accent scale-90"
+							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+								<div className="mb-1.5 flex items-center justify-between">
+									<div className="text-[11px] font-semibold text-slate-200">Rounded Corners</div>
+									<span className="font-mono text-[10px] text-slate-500">{borderRadius}px</span>
+								</div>
+								<Slider
+									value={[borderRadius]}
+									onValueChange={(values) => onBorderRadiusChange?.(values[0])}
+									min={0}
+									max={28}
+									step={1}
+									className="w-full"
 								/>
+								<div className="mt-2">
+									<label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
+										Corner Style
+									</label>
+									<select
+										value={cornerStyle}
+										onChange={(e) =>
+											onCornerStyleChange?.(e.target.value as "rounded" | "squircle" | "sharp")
+										}
+										className="h-8 w-full rounded-md border border-white/10 bg-white/[0.03] px-2 text-sm text-slate-100"
+									>
+										<option value="squircle">Squircle</option>
+										<option value="rounded">Rounded</option>
+										<option value="sharp">Sharp</option>
+									</select>
+								</div>
 							</div>
 						</div>
 
 						<div className="space-y-2">
 							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
 								<div className="flex items-center justify-between mb-1.5">
-									<div className="text-[11px] font-medium text-slate-300">Shadow</div>
+									<div className="text-[11px] font-semibold text-slate-200">Motion Blur</div>
+									<Switch
+										checked={motionBlurEnabled}
+										onCheckedChange={onMotionBlurChange}
+										className="data-[state=checked]:bg-cc-accent scale-90"
+									/>
+								</div>
+							</div>
+							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+								<div className="flex items-center justify-between mb-1.5">
+									<div className="text-[11px] font-semibold text-slate-200">Border</div>
+									<Switch
+										checked={borderEnabled}
+										onCheckedChange={onBorderEnabledChange}
+										className="data-[state=checked]:bg-cc-accent scale-90"
+									/>
+								</div>
+								{borderEnabled && (
+									<div className="space-y-2">
+										<div>
+											<div className="mb-1.5 flex items-center justify-between">
+												<div className="text-[11px] font-medium text-slate-300">Border Width</div>
+												<span className="font-mono text-[10px] text-slate-500">
+													{borderWidth}px
+												</span>
+											</div>
+											<Slider
+												value={[borderWidth]}
+												onValueChange={(values) => onBorderWidthChange?.(values[0])}
+												min={0}
+												max={20}
+												step={1}
+												className="w-full"
+											/>
+										</div>
+										<div>
+											<div className="mb-1.5 text-[11px] font-medium text-slate-300">
+												Border Color
+											</div>
+											<div className="flex items-center gap-2">
+												<input
+													type="color"
+													value={borderColor}
+													onChange={(e) => onBorderColorChange?.(e.target.value)}
+													className="h-9 w-9 rounded-md border border-white/10 bg-transparent p-0"
+												/>
+												<input
+													type="text"
+													value={borderColor}
+													onChange={(e) => onBorderColorChange?.(e.target.value)}
+													className="h-9 flex-1 rounded-md border border-white/10 bg-white/[0.03] px-2 text-sm text-slate-100"
+												/>
+											</div>
+										</div>
+										<div>
+											<div className="mb-1.5 flex items-center justify-between">
+												<div className="text-[11px] font-medium text-slate-300">Border Opacity</div>
+												<span className="font-mono text-[10px] text-slate-500">
+													{Math.round(borderOpacity * 100)}%
+												</span>
+											</div>
+											<Slider
+												value={[borderOpacity]}
+												onValueChange={(values) => onBorderOpacityChange?.(values[0])}
+												min={0}
+												max={1}
+												step={0.01}
+												className="w-full"
+											/>
+										</div>
+									</div>
+								)}
+							</div>
+							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+								<div className="flex items-center justify-between mb-1.5">
+									<div className="text-[11px] font-semibold text-slate-200">Shadow</div>
 									<span className="text-[10px] text-slate-500 font-mono">
 										{Math.round(shadowIntensity * 100)}%
 									</span>
@@ -400,34 +537,68 @@ export function SettingsPanel({
 								/>
 							</div>
 							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
-								<div className="flex items-center justify-between mb-1.5">
-									<div className="text-[11px] font-medium text-slate-300">Roundness</div>
-									<span className="text-[10px] text-slate-500 font-mono">{borderRadius}px</span>
+								<div className="mb-2 text-[11px] font-semibold text-slate-100">
+									Advanced shadow settings
 								</div>
-								<Slider
-									value={[borderRadius]}
-									onValueChange={(values) => onBorderRadiusChange?.(values[0])}
-									min={0}
-									max={16}
-									step={0.5}
-									className="w-full"
-								/>
+								<div className="space-y-2">
+									<div>
+										<div className="mb-1.5 flex items-center justify-between">
+											<div className="text-[11px] font-medium text-slate-300">Size</div>
+											<span className="font-mono text-[10px] text-slate-500">
+												{Math.round(shadowSize * 100)}%
+											</span>
+										</div>
+										<Slider
+											value={[shadowSize]}
+											onValueChange={(values) => onShadowSizeChange?.(values[0])}
+											min={0}
+											max={1}
+											step={0.01}
+											className="w-full"
+										/>
+									</div>
+									<div>
+										<div className="mb-1.5 flex items-center justify-between">
+											<div className="text-[11px] font-medium text-slate-300">Opacity</div>
+											<span className="font-mono text-[10px] text-slate-500">
+												{Math.round(shadowOpacity * 100)}%
+											</span>
+										</div>
+										<Slider
+											value={[shadowOpacity]}
+											onValueChange={(values) => onShadowOpacityChange?.(values[0])}
+											min={0}
+											max={1}
+											step={0.01}
+											className="w-full"
+										/>
+									</div>
+									<div>
+										<div className="mb-1.5 flex items-center justify-between">
+											<div className="text-[11px] font-medium text-slate-300">Blur</div>
+											<span className="font-mono text-[10px] text-slate-500">
+												{Math.round(shadowBlur * 100)}%
+											</span>
+										</div>
+										<Slider
+											value={[shadowBlur]}
+											onValueChange={(values) => onShadowBlurChange?.(values[0])}
+											min={0}
+											max={1}
+											step={0.01}
+											className="w-full"
+										/>
+									</div>
+									<div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+										<div className="text-[11px] font-medium text-slate-300">Blur Background</div>
+										<Switch
+											checked={showBlur}
+											onCheckedChange={onBlurChange}
+											className="data-[state=checked]:bg-cc-accent scale-90"
+										/>
+									</div>
+								</div>
 							</div>
-						</div>
-
-						<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
-							<div className="flex items-center justify-between mb-1.5">
-								<div className="text-[11px] font-medium text-slate-300">Padding</div>
-								<span className="text-[10px] text-slate-500 font-mono">{padding}%</span>
-							</div>
-							<Slider
-								value={[padding]}
-								onValueChange={(values) => onPaddingChange?.(values[0])}
-								min={0}
-								max={100}
-								step={1}
-								className="w-full"
-							/>
 						</div>
 					</TabsContent>
 
@@ -442,29 +613,31 @@ export function SettingsPanel({
 							}
 							className="w-full"
 						>
-							<TabsList className="mb-3 grid h-9 w-full grid-cols-3 rounded-xl border border-white/10 bg-black/30 p-1">
-								<TabsTrigger
-									value="image"
-									className="gap-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 active:scale-[0.98]"
-								>
-									<Image size={14} />
-									Image
-								</TabsTrigger>
-								<TabsTrigger
-									value="color"
-									className="gap-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 active:scale-[0.98]"
-								>
-									<Palette size={14} weight="duotone" />
-									Color
-								</TabsTrigger>
-								<TabsTrigger
-									value="gradient"
-									className="gap-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 active:scale-[0.98]"
-								>
-									<Sparkle size={14} weight="duotone" />
-									Gradient
-								</TabsTrigger>
-							</TabsList>
+							<div className="custom-scrollbar mb-3 overflow-x-auto">
+								<TabsList className="inline-flex h-9 min-w-full rounded-xl border border-white/10 bg-black/30 p-1">
+									<TabsTrigger
+										value="image"
+										className="min-w-[90px] gap-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 active:scale-[0.98]"
+									>
+										<Image size={14} />
+										Image
+									</TabsTrigger>
+									<TabsTrigger
+										value="color"
+										className="min-w-[90px] gap-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 active:scale-[0.98]"
+									>
+										<Palette size={14} weight="duotone" />
+										Color
+									</TabsTrigger>
+									<TabsTrigger
+										value="gradient"
+										className="min-w-[90px] gap-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 active:scale-[0.98]"
+									>
+										<Sparkle size={14} weight="duotone" />
+										Gradient
+									</TabsTrigger>
+								</TabsList>
+							</div>
 
 							<div className="max-h-[min(280px,35vh)] overflow-y-auto custom-scrollbar">
 								<TabsContent value="image" className="mt-0 space-y-2">
