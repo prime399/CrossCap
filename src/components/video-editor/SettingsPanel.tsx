@@ -115,6 +115,13 @@ const ZOOM_DEPTH_OPTIONS: Array<{ depth: ZoomDepth; label: string }> = [
 	{ depth: 6, label: "5×" },
 ];
 
+const SETTINGS_TAB_LABELS: Record<string, string> = {
+	effects: "Effects",
+	background: "Background Image",
+	zoom: "Zoom Controls",
+	cursor: "Cursor",
+};
+
 export function SettingsPanel({
 	selected,
 	onWallpaperChange,
@@ -217,6 +224,7 @@ export function SettingsPanel({
 	const [gradient, setGradient] = useState<string>(GRADIENTS[0]);
 
 	const [activeSettingsTab, setActiveSettingsTab] = useState<string>("effects");
+	const activeTabLabel = SETTINGS_TAB_LABELS[activeSettingsTab] ?? "Settings";
 
 	const zoomEnabled = Boolean(selectedZoomDepth);
 	const trimEnabled = Boolean(selectedTrimId);
@@ -313,43 +321,50 @@ export function SettingsPanel({
 		<div className="flex h-full min-w-0 flex-[2] flex-col overflow-hidden rounded-2xl border border-[hsl(var(--cc-border-strong))]/75 bg-gradient-to-b from-[#0f141d] via-[#0c1119] to-[#090d13] shadow-[0_20px_48px_rgba(2,8,23,0.55)] backdrop-blur-xl">
 			<div className="custom-scrollbar flex-1 overflow-y-auto p-3.5 pb-0">
 				<Tabs value={activeSettingsTab} onValueChange={setActiveSettingsTab} className="w-full">
-					<TabsList className="mb-3.5 grid h-10 w-full grid-cols-4 rounded-xl border border-white/10 bg-black/30 p-1">
+					<TabsList className="mb-3.5 grid h-11 w-full grid-cols-4 rounded-xl border border-white/10 bg-black/35 p-1">
 						<TabsTrigger
 							value="effects"
-							className="gap-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 active:scale-[0.98]"
+							className="rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
+							title="Effects"
 						>
-							<Sparkle size={14} weight="duotone" />
-							Effects
+							<Sparkle size={16} weight="duotone" />
+							<span>Effects</span>
 						</TabsTrigger>
 						<TabsTrigger
 							value="background"
-							className="gap-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 active:scale-[0.98]"
+							className="rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
+							title="Background"
 						>
-							<Palette size={14} weight="duotone" />
-							Background
+							<Image size={16} weight="duotone" />
+							<span>Background</span>
 						</TabsTrigger>
 						<TabsTrigger
 							value="zoom"
-							className="gap-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 active:scale-[0.98]"
+							className="rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
+							title="Zoom"
 						>
-							<MagnifyingGlass size={14} weight="duotone" />
-							Zoom
+							<MagnifyingGlass size={16} weight="duotone" />
+							<span>Zoom</span>
 						</TabsTrigger>
 						<TabsTrigger
 							value="cursor"
-							className="gap-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 active:scale-[0.98]"
+							className="rounded-lg text-slate-300 transition-all duration-200 hover:text-white active:scale-[0.98] [&>span]:sr-only"
+							title="Cursor"
 						>
-							<Cursor size={14} weight="duotone" />
-							Cursor
+							<Cursor size={16} weight="duotone" />
+							<span>Cursor</span>
 						</TabsTrigger>
 					</TabsList>
+					<div className="mb-3 border-b border-white/10 pb-2">
+						<p className="text-sm font-semibold text-slate-100">{activeTabLabel}</p>
+					</div>
 
 					<TabsContent
 						value="effects"
 						className="mt-0 space-y-2.5 animate-in fade-in-50 slide-in-from-bottom-1 duration-200"
 					>
-						<div className="grid grid-cols-2 gap-2">
-							<div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2">
+						<div className="space-y-2">
+							<div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
 								<div className="text-[11px] font-medium text-slate-300">Motion Blur</div>
 								<Switch
 									checked={motionBlurEnabled}
@@ -357,7 +372,7 @@ export function SettingsPanel({
 									className="data-[state=checked]:bg-cc-accent scale-90"
 								/>
 							</div>
-							<div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2">
+							<div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
 								<div className="text-[11px] font-medium text-slate-300">Blur BG</div>
 								<Switch
 									checked={showBlur}
@@ -367,7 +382,7 @@ export function SettingsPanel({
 							</div>
 						</div>
 
-						<div className="grid grid-cols-2 gap-2">
+						<div className="space-y-2">
 							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
 								<div className="flex items-center justify-between mb-1.5">
 									<div className="text-[11px] font-medium text-slate-300">Shadow</div>
@@ -381,7 +396,7 @@ export function SettingsPanel({
 									min={0}
 									max={1}
 									step={0.01}
-									className="w-full [&_[role=slider]]:bg-cc-accent [&_[role=slider]]:border-cc-accent [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
+									className="w-full"
 								/>
 							</div>
 							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
@@ -395,7 +410,7 @@ export function SettingsPanel({
 									min={0}
 									max={16}
 									step={0.5}
-									className="w-full [&_[role=slider]]:bg-cc-accent [&_[role=slider]]:border-cc-accent [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
+									className="w-full"
 								/>
 							</div>
 						</div>
@@ -411,7 +426,7 @@ export function SettingsPanel({
 								min={0}
 								max={100}
 								step={1}
-								className="w-full [&_[role=slider]]:bg-cc-accent [&_[role=slider]]:border-cc-accent [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
+								className="w-full"
 							/>
 						</div>
 					</TabsContent>
@@ -469,14 +484,14 @@ export function SettingsPanel({
 										Upload Custom
 									</Button>
 
-									<div className="grid grid-cols-7 gap-1.5">
+									<div className="grid grid-cols-5 gap-2">
 										{customImages.map((imageUrl, idx) => {
 											const isSelected = selected === imageUrl;
 											return (
 												<div
 													key={`custom-${idx}`}
 													className={cn(
-														"group relative h-9 w-9 cursor-pointer overflow-hidden rounded-md border-2 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95",
+														"group relative h-10 w-full cursor-pointer overflow-hidden rounded-md border shadow-sm transition-all duration-200 hover:scale-[1.03] active:scale-95",
 														isSelected
 															? "border-cc-accent ring-1 ring-cc-accent/30"
 															: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
@@ -520,7 +535,7 @@ export function SettingsPanel({
 												<div
 													key={path}
 													className={cn(
-														"aspect-square h-9 w-9 cursor-pointer overflow-hidden rounded-md border-2 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95",
+														"aspect-square h-10 w-full cursor-pointer overflow-hidden rounded-md border shadow-sm transition-all duration-200 hover:scale-[1.03] active:scale-95",
 														isSelected
 															? "border-cc-accent ring-1 ring-cc-accent/30"
 															: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
@@ -556,12 +571,12 @@ export function SettingsPanel({
 								</TabsContent>
 
 								<TabsContent value="gradient" className="mt-0">
-									<div className="grid grid-cols-7 gap-1.5">
+									<div className="grid grid-cols-5 gap-2">
 										{GRADIENTS.map((g, idx) => (
 											<div
 												key={g}
 												className={cn(
-													"aspect-square h-9 w-9 cursor-pointer overflow-hidden rounded-md border-2 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95",
+													"aspect-square h-10 w-full cursor-pointer overflow-hidden rounded-md border shadow-sm transition-all duration-200 hover:scale-[1.03] active:scale-95",
 													gradient === g
 														? "border-cc-accent ring-1 ring-cc-accent/30"
 														: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
