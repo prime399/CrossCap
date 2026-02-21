@@ -1,6 +1,14 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { CaretDown, Check, Crop, FrameCorners } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Toaster } from "@/components/ui/sonner";
 import {
 	calculateOutputDimensions,
@@ -13,7 +21,7 @@ import {
 } from "@/lib/exporter";
 import { parseProjectEditor, validateProjectData } from "@/schemas/project";
 import { useEditorStore } from "@/stores/editorStore";
-import { getAspectRatioValue } from "@/utils/aspectRatioUtils";
+import { ASPECT_RATIOS, getAspectRatioLabel, getAspectRatioValue } from "@/utils/aspectRatioUtils";
 import { ExportDialog } from "./ExportDialog";
 import PlaybackControls from "./PlaybackControls";
 import { SettingsPanel } from "./SettingsPanel";
@@ -63,6 +71,8 @@ export default function VideoEditor() {
 	const exportError = useEditorStore((s) => s.exportError);
 	const showExportDialog = useEditorStore((s) => s.showExportDialog);
 	const aspectRatio = useEditorStore((s) => s.aspectRatio);
+
+	const [showCropModal, setShowCropModal] = useState(false);
 
 	const wallpaper = useEditorStore((s) => s.background.value);
 	const shadowIntensity = useEditorStore((s) => s.effects.shadowIntensity);
@@ -668,6 +678,46 @@ export default function VideoEditor() {
 							<div className="relative w-full h-full">
 								{/* Video preview area */}
 								<div className="w-full h-full flex flex-col items-center justify-center bg-black/40 rounded-2xl border border-white/5 shadow-2xl overflow-hidden pr-[300px]">
+									{/* Aspect ratio + Crop overlay */}
+									<div className="absolute top-4 left-4 z-20 flex items-center gap-1">
+										<Button
+											onClick={() => setShowCropModal(true)}
+											variant="ghost"
+											size="sm"
+											className="h-7 px-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all gap-1.5"
+											title="Crop Video"
+										>
+											<Crop size={14} weight="bold" />
+											<span className="font-medium">Crop</span>
+										</Button>
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button
+													variant="ghost"
+													size="sm"
+													className="h-7 px-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all gap-1.5"
+												>
+													<FrameCorners size={14} weight="bold" />
+													<span className="font-medium">{getAspectRatioLabel(aspectRatio)}</span>
+													<CaretDown size={12} weight="bold" />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="start" className="bg-cc-popover border-white/10">
+												{ASPECT_RATIOS.map((ratio) => (
+													<DropdownMenuItem
+														key={ratio}
+														onClick={() => store.setAspectRatio(ratio)}
+														className="text-slate-300 hover:text-white hover:bg-white/10 cursor-pointer flex items-center justify-between gap-3"
+													>
+														<span>{getAspectRatioLabel(ratio)}</span>
+														{aspectRatio === ratio && (
+															<Check size={12} weight="bold" className="text-cc-accent" />
+														)}
+													</DropdownMenuItem>
+												))}
+											</DropdownMenuContent>
+										</DropdownMenu>
+									</div>
 									{/* Video preview */}
 									<div
 										className="w-full flex justify-center items-center"
@@ -810,6 +860,8 @@ export default function VideoEditor() {
 										onClickHighlightChange={setClickHighlight}
 										clickHighlightColor={store.cursor.clickHighlightColor}
 										onClickHighlightColorChange={setClickHighlightColor}
+										showCropModal={showCropModal}
+										onShowCropModal={setShowCropModal}
 									/>
 								</div>
 							</div>
@@ -848,8 +900,6 @@ export default function VideoEditor() {
 									onAnnotationDelete={store.deleteAnnotationRegion}
 									selectedAnnotationId={selectedAnnotationId}
 									onSelectAnnotation={handleSelectAnnotation}
-									aspectRatio={aspectRatio}
-									onAspectRatioChange={store.setAspectRatio}
 								/>
 							</div>
 						</div>

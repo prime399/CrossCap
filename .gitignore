@@ -27,5 +27,6 @@ release/**
 .kiro/
 .claude/
 CLAUDE.md
+AGENTS.md
 # npx electron-builder --mac --win
 screenshots/

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { type AspectRatio } from "@/utils/aspectRatioUtils";
 
@@ -14,16 +14,21 @@ interface CropControlProps {
 	cropRegion: CropRegion;
 	onCropChange: (region: CropRegion) => void;
 	aspectRatio: AspectRatio;
+	onReset?: () => void;
 }
 
-type DragHandle = "top" | "right" | "bottom" | "left" | null;
+type DragHandle = "top" | "right" | "bottom" | "left";
 
-export function CropControl({ videoElement, cropRegion, onCropChange }: CropControlProps) {
+export function CropControl({ videoElement, cropRegion, onCropChange, onReset }: CropControlProps) {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
-	const [isDragging, setIsDragging] = useState<DragHandle>(null);
-	const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-	const [initialCrop, setInitialCrop] = useState<CropRegion>(cropRegion);
+	const dragRef = useRef<{
+		handle: DragHandle;
+		startX: number;
+		startY: number;
+		initialCrop: CropRegion;
+	} | null>(null);
+	const [activeDrag, setActiveDrag] = useState<DragHandle | null>(null);
 
 	useEffect(() => {
 		if (!videoElement || !canvasRef.current) return;
@@ -35,83 +40,95 @@ export function CropControl({ videoElement, cropRegion, onCropChange }: CropCont
 		canvas.width = videoElement.videoWidth || 1920;
 		canvas.height = videoElement.videoHeight || 1080;
 
+		let rafId: number;
 		const draw = () => {
 			if (videoElement.readyState >= 2) {
 				ctx.clearRect(0, 0, canvas.width, canvas.height);
 				ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 			}
-			requestAnimationFrame(draw);
+			rafId = requestAnimationFrame(draw);
 		};
 
-		const rafId = requestAnimationFrame(draw);
+		rafId = requestAnimationFrame(draw);
 		return () => cancelAnimationFrame(rafId);
 	}, [videoElement]);
 
-	const getContainerRect = () => {
-		return (
-			containerRef.current?.getBoundingClientRect() || { width: 0, height: 0, left: 0, top: 0 }
-		);
-	};
+	const handlePointerDown = useCallback(
+		(e: React.PointerEvent, handle: DragHandle) => {
+			e.stopPropagation();
+			e.preventDefault();
+			const rect = containerRef.current?.getBoundingClientRect();
+			if (!rect) return;
 
-	const handlePointerDown = (e: React.PointerEvent, handle: DragHandle) => {
-		e.stopPropagation();
-		e.preventDefault();
-		setIsDragging(handle);
-		const rect = getContainerRect();
-		setDragStart({
-			x: (e.clientX - rect.left) / rect.width,
-			y: (e.clientY - rect.top) / rect.height,
-		});
-		setInitialCrop(cropRegion);
+			dragRef.current = {
+				handle,
+				startX: (e.clientX - rect.left) / rect.width,
+				startY: (e.clientY - rect.top) / rect.height,
+				initialCrop: { ...cropRegion },
+			};
+			setActiveDrag(handle);
+		},
+		[cropRegion],
+	);
 
-		e.currentTarget.setPointerCapture(e.pointerId);
-	};
+	useEffect(() => {
+		if (!activeDrag) return;
 
-	const handlePointerMove = (e: React.PointerEvent) => {
-		if (!isDragging) return;
+		const handleMove = (e: PointerEvent) => {
+			const drag = dragRef.current;
+			if (!drag) return;
 
-		const rect = getContainerRect();
-		const currentX = (e.clientX - rect.left) / rect.width;
-		const currentY = (e.clientY - rect.top) / rect.height;
-		const deltaX = currentX - dragStart.x;
-		const deltaY = currentY - dragStart.y;
+			const rect = containerRef.current?.getBoundingClientRect();
+			if (!rect) return;
 
-		let newCrop = { ...initialCrop };
+			const currentX = (e.clientX - rect.left) / rect.width;
+			const currentY = (e.clientY - rect.top) / rect.height;
+			const deltaX = currentX - drag.startX;
+			const deltaY = currentY - drag.startY;
+			const ic = drag.initialCrop;
+			const newCrop = { ...ic };
 
-		switch (isDragging) {
-			case "top": {
-				const newY = Math.max(0, initialCrop.y + deltaY);
-				const bottom = initialCrop.y + initialCrop.height;
-				newCrop.y = Math.min(newY, bottom - 0.1);
-				newCrop.height = bottom - newCrop.y;
-				break;
+			switch (drag.handle) {
+				case "top": {
+					const newY = Math.max(0, ic.y + deltaY);
+					const bottom = ic.y + ic.height;
+					newCrop.y = Math.min(newY, bottom - 0.1);
+					newCrop.height = bottom - newCrop.y;
+					break;
+				}
+				case "bottom":
+					newCrop.height = Math.max(0.1, Math.min(ic.height + deltaY, 1 - ic.y));
+					break;
+				case "left": {
+					const newX = Math.max(0, ic.x + deltaX);
+					const right = ic.x + ic.width;
+					newCrop.x = Math.min(newX, right - 0.1);
+					newCrop.width = right - newCrop.x;
+					break;
+				}
+				case "right":
+					newCrop.width = Math.max(0.1, Math.min(ic.width + deltaX, 1 - ic.x));
+					break;
 			}
-			case "bottom":
-				newCrop.height = Math.max(0.1, Math.min(initialCrop.height + deltaY, 1 - initialCrop.y));
-				break;
-			case "left": {
-				const newX = Math.max(0, initialCrop.x + deltaX);
-				const right = initialCrop.x + initialCrop.width;
-				newCrop.x = Math.min(newX, right - 0.1);
-				newCrop.width = right - newCrop.x;
-				break;
-			}
-			case "right":
-				newCrop.width = Math.max(0.1, Math.min(initialCrop.width + deltaX, 1 - initialCrop.x));
-				break;
-		}
 
-		onCropChange(newCrop);
-	};
+			onCropChange(newCrop);
+		};
 
-	const handlePointerUp = (e: React.PointerEvent) => {
-		if (isDragging) {
-			try {
-				e.currentTarget.releasePointerCapture(e.pointerId);
-			} catch {}
-		}
-		setIsDragging(null);
-	};
+		const handleUp = () => {
+			dragRef.current = null;
+			setActiveDrag(null);
+		};
+
+		document.addEventListener("pointermove", handleMove);
+		document.addEventListener("pointerup", handleUp);
+		return () => {
+			document.removeEventListener("pointermove", handleMove);
+			document.removeEventListener("pointerup", handleUp);
+		};
+	}, [activeDrag, onCropChange]);
+
+	const isDefault =
+		cropRegion.x === 0 && cropRegion.y === 0 && cropRegion.width === 1 && cropRegion.height === 1;
 
 	const cropPixelX = cropRegion.x * 100;
 	const cropPixelY = cropRegion.y * 100;
@@ -122,7 +139,6 @@ export function CropControl({ videoElement, cropRegion, onCropChange }: CropCont
 		: 16 / 9;
 	const isVideoPortrait = videoAspectRatio < 1;
 	const maxContainerWidth = isVideoPortrait ? "40vw" : "75vw";
-	const maxContainerHeight = "75vh";
 
 	return (
 		<div className="w-full p-8">
@@ -132,12 +148,9 @@ export function CropControl({ videoElement, cropRegion, onCropChange }: CropCont
 				style={{
 					aspectRatio: videoAspectRatio,
 					maxWidth: maxContainerWidth,
-					maxHeight: maxContainerHeight,
+					maxHeight: "75vh",
 					margin: "0 auto",
 				}}
-				onPointerMove={handlePointerMove}
-				onPointerUp={handlePointerUp}
-				onPointerLeave={handlePointerUp}
 			>
 				<canvas
 					ref={canvasRef}
@@ -145,13 +158,8 @@ export function CropControl({ videoElement, cropRegion, onCropChange }: CropCont
 					style={{ imageRendering: "auto" }}
 				/>
 
-				<div className="absolute inset-0 pointer-events-none" style={{ transition: "none" }}>
-					<svg
-						width="100%"
-						height="100%"
-						className="absolute inset-0"
-						style={{ transition: "none" }}
-					>
+				<div className="absolute inset-0 pointer-events-none">
+					<svg width="100%" height="100%" className="absolute inset-0">
 						<defs>
 							<mask id="cropMask">
 								<rect width="100%" height="100%" fill="white" />
@@ -161,7 +169,6 @@ export function CropControl({ videoElement, cropRegion, onCropChange }: CropCont
 									width={`${cropPixelWidth}%`}
 									height={`${cropPixelHeight}%`}
 									fill="black"
-									style={{ transition: "none" }}
 								/>
 							</mask>
 						</defs>
@@ -171,63 +178,82 @@ export function CropControl({ videoElement, cropRegion, onCropChange }: CropCont
 							fill="black"
 							fillOpacity="0.6"
 							mask="url(#cropMask)"
-							style={{ transition: "none" }}
 						/>
 					</svg>
 				</div>
 
+				{/* Top handle */}
 				<div
-					className={cn("absolute h-[3px] cursor-ns-resize z-20 pointer-events-auto bg-cc-accent")}
+					className={cn(
+						"absolute h-[3px] cursor-ns-resize z-20 pointer-events-auto bg-cc-accent",
+						activeDrag === "top" && "bg-white",
+					)}
 					style={{
 						left: `${cropPixelX}%`,
 						top: `${cropPixelY}%`,
 						width: `${cropPixelWidth}%`,
 						transform: "translateY(-50%)",
-						willChange: "transform",
-						transition: "none",
 					}}
 					onPointerDown={(e) => handlePointerDown(e, "top")}
 				/>
 
+				{/* Bottom handle */}
 				<div
-					className={cn("absolute h-[3px] cursor-ns-resize z-20 pointer-events-auto bg-cc-accent")}
+					className={cn(
+						"absolute h-[3px] cursor-ns-resize z-20 pointer-events-auto bg-cc-accent",
+						activeDrag === "bottom" && "bg-white",
+					)}
 					style={{
 						left: `${cropPixelX}%`,
 						top: `${cropPixelY + cropPixelHeight}%`,
 						width: `${cropPixelWidth}%`,
 						transform: "translateY(-50%)",
-						willChange: "transform",
-						transition: "none",
 					}}
 					onPointerDown={(e) => handlePointerDown(e, "bottom")}
 				/>
 
+				{/* Left handle */}
 				<div
-					className={cn("absolute w-[3px] cursor-ew-resize z-20 pointer-events-auto bg-cc-accent")}
+					className={cn(
+						"absolute w-[3px] cursor-ew-resize z-20 pointer-events-auto bg-cc-accent",
+						activeDrag === "left" && "bg-white",
+					)}
 					style={{
 						left: `${cropPixelX}%`,
 						top: `${cropPixelY}%`,
 						height: `${cropPixelHeight}%`,
 						transform: "translateX(-50%)",
-						willChange: "transform",
-						transition: "none",
 					}}
 					onPointerDown={(e) => handlePointerDown(e, "left")}
 				/>
 
+				{/* Right handle */}
 				<div
-					className={cn("absolute w-[3px] cursor-ew-resize z-20 pointer-events-auto bg-cc-accent")}
+					className={cn(
+						"absolute w-[3px] cursor-ew-resize z-20 pointer-events-auto bg-cc-accent",
+						activeDrag === "right" && "bg-white",
+					)}
 					style={{
 						left: `${cropPixelX + cropPixelWidth}%`,
 						top: `${cropPixelY}%`,
 						height: `${cropPixelHeight}%`,
 						transform: "translateX(-50%)",
-						willChange: "transform",
-						transition: "none",
 					}}
 					onPointerDown={(e) => handlePointerDown(e, "right")}
 				/>
 			</div>
+
+			{!isDefault && onReset && (
+				<div className="flex justify-center mt-4">
+					<button
+						type="button"
+						onClick={onReset}
+						className="text-xs text-slate-400 hover:text-white transition-colors underline underline-offset-2"
+					>
+						Reset crop
+					</button>
+				</div>
+			)}
 		</div>
 	);
 }

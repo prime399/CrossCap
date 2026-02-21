@@ -1,7 +1,6 @@
 import Block from "@uiw/react-color-block";
 import {
 	Bug,
-	Crop,
 	DownloadSimple,
 	FilmStrip,
 	FolderOpen,
@@ -95,6 +94,8 @@ interface SettingsPanelProps {
 	onClickHighlightChange?: (v: boolean) => void;
 	clickHighlightColor?: string;
 	onClickHighlightColorChange?: (v: string) => void;
+	showCropModal?: boolean;
+	onShowCropModal?: (show: boolean) => void;
 }
 
 const ZOOM_DEPTH_OPTIONS: Array<{ depth: ZoomDepth; label: string }> = [
@@ -165,6 +166,8 @@ export function SettingsPanel({
 	onClickHighlightChange,
 	clickHighlightColor,
 	onClickHighlightColorChange,
+	showCropModal,
+	onShowCropModal,
 }: SettingsPanelProps) {
 	const [wallpaperPaths, setWallpaperPaths] = useState<string[]>([]);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -204,7 +207,6 @@ export function SettingsPanel({
 
 	const [selectedColor, setSelectedColor] = useState("#ADADAD");
 	const [gradient, setGradient] = useState<string>(GRADIENTS[0]);
-	const [showCropDropdown, setShowCropDropdown] = useState(false);
 
 	const [activeSettingsTab, setActiveSettingsTab] = useState<string>("effects");
 
@@ -390,14 +392,6 @@ export function SettingsPanel({
 							/>
 						</div>
 
-						<Button
-							onClick={() => setShowCropDropdown(!showCropDropdown)}
-							variant="outline"
-							className="w-full gap-1.5 bg-white/5 text-slate-200 border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white text-[11px] h-9 transition-all"
-						>
-							<Crop size={14} />
-							Crop Video
-						</Button>
 					</TabsContent>
 
 					<TabsContent value="background" className="mt-0">
@@ -634,11 +628,11 @@ export function SettingsPanel({
 				</Tabs>
 			</div>
 
-			{showCropDropdown && cropRegion && onCropChange && (
+			{showCropModal && cropRegion && onCropChange && (
 				<>
 					<div
 						className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-in fade-in duration-200"
-						onClick={() => setShowCropDropdown(false)}
+						onClick={() => onShowCropModal?.(false)}
 					/>
 					<div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[60] bg-cc-surface-0 rounded-2xl shadow-2xl border border-white/10 p-8 w-[90vw] max-w-5xl max-h-[90vh] overflow-auto animate-in zoom-in-95 duration-200">
 						<div className="flex items-center justify-between mb-6">
@@ -651,7 +645,7 @@ export function SettingsPanel({
 							<Button
 								variant="ghost"
 								size="icon"
-								onClick={() => setShowCropDropdown(false)}
+								onClick={() => onShowCropModal?.(false)}
 								className="hover:bg-white/10 text-slate-400 hover:text-white"
 							>
 								<X size={20} weight="bold" />
@@ -665,7 +659,7 @@ export function SettingsPanel({
 						/>
 						<div className="mt-6 flex justify-end">
 							<Button
-								onClick={() => setShowCropDropdown(false)}
+								onClick={() => onShowCropModal?.(false)}
 								size="lg"
 								className="bg-cc-accent hover:bg-cc-accent/90 text-white"
 							>

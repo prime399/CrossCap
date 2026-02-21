@@ -1,26 +1,19 @@
 import type { Range, Span } from "dnd-timeline";
 import { useTimelineContext } from "dnd-timeline";
 import {
-	CaretDown,
 	ChatText,
-	Check,
 	MagnifyingGlassPlus,
 	MagicWand,
 	Plus,
 	Scissors,
+	SkipBack,
+	SkipForward,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ASPECT_RATIOS, type AspectRatio, getAspectRatioLabel } from "@/utils/aspectRatioUtils";
 import { formatShortcut } from "@/utils/platformUtils";
 import { TutorialHelp } from "../TutorialHelp";
 import type {
@@ -69,8 +62,6 @@ interface TimelineEditorProps {
 	onAnnotationDelete?: (id: string) => void;
 	selectedAnnotationId?: string | null;
 	onSelectAnnotation?: (id: string | null) => void;
-	aspectRatio: AspectRatio;
-	onAspectRatioChange: (aspectRatio: AspectRatio) => void;
 }
 
 interface TimelineScaleConfig {
@@ -594,8 +585,6 @@ export default function TimelineEditor({
 	onAnnotationDelete,
 	selectedAnnotationId,
 	onSelectAnnotation,
-	aspectRatio,
-	onAspectRatioChange,
 }: TimelineEditorProps) {
 	const totalMs = useMemo(() => Math.max(0, Math.round(videoDuration * 1000)), [videoDuration]);
 	const currentTimeMs = useMemo(() => Math.round(currentTime * 1000), [currentTime]);
@@ -1155,6 +1144,8 @@ export default function TimelineEditor({
 	return (
 		<div className="flex-1 flex flex-col bg-cc-surface-0 overflow-hidden">
 			<div className="flex items-center gap-2 px-4 py-2 border-b border-white/5 bg-cc-surface-0">
+
+				{/* Center group: Timeline actions */}
 				<div className="flex items-center gap-1">
 					<Button
 						onClick={handleAddZoom}
@@ -1193,35 +1184,35 @@ export default function TimelineEditor({
 						<ChatText size={16} weight="bold" />
 					</Button>
 				</div>
-				<div className="flex items-center gap-2">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="sm"
-								className="h-7 px-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all gap-1"
-							>
-								<span className="font-medium">{getAspectRatioLabel(aspectRatio)}</span>
-								<CaretDown size={12} weight="bold" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end" className="bg-cc-popover border-white/10">
-							{ASPECT_RATIOS.map((ratio) => (
-								<DropdownMenuItem
-									key={ratio}
-									onClick={() => onAspectRatioChange(ratio)}
-									className="text-slate-300 hover:text-white hover:bg-white/10 cursor-pointer flex items-center justify-between gap-3"
-								>
-									<span>{getAspectRatioLabel(ratio)}</span>
-									{aspectRatio === ratio && <Check size={12} weight="bold" className="text-cc-accent" />}
-								</DropdownMenuItem>
-							))}
-						</DropdownMenuContent>
-					</DropdownMenu>
-					<div className="w-[1px] h-4 bg-white/10" />
+
+				<div className="w-[1px] h-4 bg-white/10" />
+
+				{/* Nav group: Skip back/forward + Fit view + Tutorial */}
+				<div className="flex items-center gap-1">
+					<Button
+						onClick={() => onSeek?.(0)}
+						variant="ghost"
+						size="icon"
+						className="h-7 w-7 text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all"
+						title="Jump to Start"
+					>
+						<SkipBack size={14} weight="fill" />
+					</Button>
+					<Button
+						onClick={() => onSeek?.(videoDuration)}
+						variant="ghost"
+						size="icon"
+						className="h-7 w-7 text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all"
+						title="Jump to End"
+					>
+						<SkipForward size={14} weight="fill" />
+					</Button>
 					<TutorialHelp />
 				</div>
+
 				<div className="flex-1" />
+
+				{/* Right group: Keyboard shortcuts */}
 				<div className="flex items-center gap-4 text-[10px] text-slate-500 font-medium">
 					<span className="flex items-center gap-1.5">
 						<kbd className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded text-cc-accent font-sans">
