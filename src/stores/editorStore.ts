@@ -159,6 +159,7 @@ interface ProjectActions {
 		aspectRatio: AspectRatio;
 		exportQuality: ExportQuality;
 		exportFormat: ExportFormat;
+		bitrateMultiplier?: number;
 		gifFrameRate: GifFrameRate;
 		gifLoop: boolean;
 		gifSizePreset: GifSizePreset;
@@ -573,6 +574,7 @@ export const useEditorStore = create<EditorStore>()(
 					export: {
 						quality: project.exportQuality,
 						format: project.exportFormat,
+						bitrateMultiplier: project.bitrateMultiplier ?? 1,
 						gifFrameRate: project.gifFrameRate,
 						gifLoop: project.gifLoop,
 						gifSizePreset: project.gifSizePreset,

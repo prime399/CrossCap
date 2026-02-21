@@ -188,6 +188,7 @@ export interface VideoEditorBackground {
 export interface VideoEditorExport {
 	format: ExportFormat;
 	quality: ExportQuality;
+	bitrateMultiplier: number;
 	gifFrameRate: GifFrameRate;
 	gifLoop: boolean;
 	gifSizePreset: GifSizePreset;
@@ -243,6 +244,7 @@ export const DEFAULT_VIDEO_EDITOR_BACKGROUND: VideoEditorBackground = {
 export const DEFAULT_VIDEO_EDITOR_EXPORT: VideoEditorExport = {
 	format: "mp4",
 	quality: "good",
+	bitrateMultiplier: 1,
 	gifFrameRate: 15,
 	gifLoop: true,
 	gifSizePreset: "medium",

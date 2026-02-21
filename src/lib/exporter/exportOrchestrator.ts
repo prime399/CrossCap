@@ -106,6 +106,7 @@ function runMp4Export(
 	ctx: ExportContext,
 ): { promise: Promise<ExportResult>; handle: ExportHandle } {
 	const quality = settings.quality || ctx.exportQuality;
+	const bitrateMultiplier = settings.bitrateMultiplier ?? 1;
 	const dims = calculateExportDimensions(
 		ctx.sourceWidth,
 		ctx.sourceHeight,
@@ -118,7 +119,7 @@ function runMp4Export(
 		width: dims.width,
 		height: dims.height,
 		frameRate: 60,
-		bitrate: dims.bitrate,
+		bitrate: Math.round(dims.bitrate * bitrateMultiplier),
 		codec: "avc1.640033",
 		wallpaper: ctx.wallpaper,
 		zoomRegions: ctx.zoomRegions,

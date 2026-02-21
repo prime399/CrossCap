@@ -381,6 +381,13 @@ const EditorSchema = v.object({
 		),
 		"medium",
 	),
+	bitrateMultiplier: v.optional(
+		v.pipe(
+			v.unknown(),
+			v.transform((val) => (typeof val === "number" && val >= 0.25 && val <= 2 ? val : 1)),
+		),
+		1,
+	),
 });
 
 export const ProjectDataSchema = v.object({
@@ -424,6 +431,7 @@ export interface ParsedEditor {
 	aspectRatio: AspectRatio;
 	exportQuality: ExportQuality;
 	exportFormat: ExportFormat;
+	bitrateMultiplier: number;
 	gifFrameRate: GifFrameRate;
 	gifLoop: boolean;
 	gifSizePreset: GifSizePreset;
@@ -468,6 +476,7 @@ export function parseProjectEditor(raw: unknown): ParsedEditor {
 		aspectRatio: parsed.aspectRatio,
 		exportQuality: parsed.exportQuality,
 		exportFormat: parsed.exportFormat,
+		bitrateMultiplier: parsed.bitrateMultiplier,
 		gifFrameRate: parsed.gifFrameRate,
 		gifLoop: parsed.gifLoop,
 		gifSizePreset: parsed.gifSizePreset,

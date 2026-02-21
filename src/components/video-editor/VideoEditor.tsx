@@ -110,6 +110,7 @@ export default function VideoEditor() {
 	const annotationRegions = useEditorStore((s) => s.regions.annotationRegions);
 	const exportQuality = useEditorStore((s) => s.export.quality);
 	const exportFormat = useEditorStore((s) => s.export.format);
+	const bitrateMultiplier = useEditorStore((s) => s.export.bitrateMultiplier);
 	const gifFrameRate = useEditorStore((s) => s.export.gifFrameRate);
 	const gifLoop = useEditorStore((s) => s.export.gifLoop);
 	const gifSizePreset = useEditorStore((s) => s.export.gifSizePreset);
@@ -195,6 +196,10 @@ export default function VideoEditor() {
 	);
 	const setGifSizePreset = useCallback(
 		(value: typeof gifSizePreset) => store.setExport({ gifSizePreset: value }),
+		[store.setExport],
+	);
+	const setBitrateMultiplier = useCallback(
+		(value: number) => store.setExport({ bitrateMultiplier: value }),
 		[store.setExport],
 	);
 	const setActiveBackgroundTab = useCallback(
@@ -304,6 +309,7 @@ export default function VideoEditor() {
 					aspectRatio,
 					exportQuality,
 					exportFormat,
+					bitrateMultiplier,
 					gifFrameRate,
 					gifLoop,
 					gifSizePreset,
@@ -362,6 +368,7 @@ export default function VideoEditor() {
 			aspectRatio,
 			exportQuality,
 			exportFormat,
+			bitrateMultiplier,
 			gifFrameRate,
 			gifLoop,
 			gifSizePreset,
@@ -433,6 +440,7 @@ export default function VideoEditor() {
 			aspectRatio: editor.aspectRatio,
 			exportQuality: editor.exportQuality,
 			exportFormat: editor.exportFormat,
+			bitrateMultiplier: editor.bitrateMultiplier,
 			gifFrameRate: editor.gifFrameRate,
 			gifLoop: editor.gifLoop,
 			gifSizePreset: editor.gifSizePreset,
@@ -722,6 +730,7 @@ export default function VideoEditor() {
 		const settings: ExportSettings = {
 			format: exportFormat,
 			quality: exportFormat === "mp4" ? exportQuality : undefined,
+			bitrateMultiplier: exportFormat === "mp4" ? bitrateMultiplier : undefined,
 			gifConfig:
 				exportFormat === "gif"
 					? {
@@ -742,6 +751,7 @@ export default function VideoEditor() {
 		videoPath,
 		exportFormat,
 		exportQuality,
+		bitrateMultiplier,
 		gifFrameRate,
 		gifLoop,
 		gifSizePreset,
@@ -872,6 +882,8 @@ export default function VideoEditor() {
 					gifOutputDimensions={gifOutputDimensions}
 					sourceWidth={videoPlaybackRef.current?.video?.videoWidth || 1920}
 					sourceHeight={videoPlaybackRef.current?.video?.videoHeight || 1080}
+					bitrateMultiplier={bitrateMultiplier}
+					onBitrateMultiplierChange={setBitrateMultiplier}
 				/>
 				<Toaster theme="dark" className="pointer-events-auto" />
 				<ExportDialog

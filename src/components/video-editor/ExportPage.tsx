@@ -12,6 +12,7 @@ import {
 import type React from "react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
 	calculateExportDimensions,
@@ -77,6 +78,8 @@ interface ExportPageProps {
 	gifOutputDimensions: { width: number; height: number };
 	sourceWidth: number;
 	sourceHeight: number;
+	bitrateMultiplier: number;
+	onBitrateMultiplierChange: (value: number) => void;
 }
 
 export function ExportPage({
@@ -130,6 +133,8 @@ export function ExportPage({
 	gifOutputDimensions,
 	sourceWidth,
 	sourceHeight,
+	bitrateMultiplier,
+	onBitrateMultiplierChange,
 }: ExportPageProps) {
 	const ignoreZoomSelection = () => undefined;
 	const ignoreZoomFocus = () => undefined;
@@ -138,6 +143,12 @@ export function ExportPage({
 		if (exportFormat === "gif") return gifOutputDimensions;
 		return calculateExportDimensions(sourceWidth, sourceHeight, exportQuality, aspectRatio);
 	}, [exportFormat, gifOutputDimensions, sourceWidth, sourceHeight, exportQuality, aspectRatio]);
+
+	const effectiveBitrateMbps = useMemo(() => {
+		if (exportFormat !== "mp4") return 0;
+		const dims = calculateExportDimensions(sourceWidth, sourceHeight, exportQuality, aspectRatio);
+		return (dims.bitrate * bitrateMultiplier) / 1_000_000;
+	}, [exportFormat, sourceWidth, sourceHeight, exportQuality, aspectRatio, bitrateMultiplier]);
 
 	const resolutionValue = useMemo(() => {
 		if (exportFormat === "gif") return `${gifOutputDimensions.width}x${gifOutputDimensions.height}`;
@@ -395,6 +406,29 @@ export function ExportPage({
 										>
 											Source
 										</button>
+									</div>
+								</section>
+							)}
+
+							{exportFormat === "mp4" && (
+								<section>
+									<div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-200">
+										<span>Bitrate</span>
+										<span className="font-mono text-[11px] text-slate-400">
+											{effectiveBitrateMbps.toFixed(0)} Mbps
+										</span>
+									</div>
+									<Slider
+										value={[bitrateMultiplier]}
+										min={0.25}
+										max={2}
+										step={0.25}
+										onValueChange={([v]) => onBitrateMultiplierChange(v)}
+										className="w-full"
+									/>
+									<div className="mt-1.5 flex justify-between text-[10px] text-slate-500">
+										<span>Smaller file</span>
+										<span>Higher quality</span>
 									</div>
 								</section>
 							)}
