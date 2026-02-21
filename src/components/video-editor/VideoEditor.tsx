@@ -647,20 +647,22 @@ export default function VideoEditor() {
 				const result = await promise;
 
 				if (result.success && result.blob) {
-					// Signal rendering complete before opening save dialog
+					const arrayBuffer = await result.blob.arrayBuffer();
+					const ext = exportSettings.format === "gif" ? "gif" : "mp4";
+					const fileName = `export-${Date.now()}.${ext}`;
+
+					// End the exporting state before opening the save dialog so the
+					// ExportDialog success animation can play while the native file
+					// picker is open. Without this, the dialog shows a spinner behind
+					// the OS save dialog.
+					store.setIsExporting(false);
 					store.setExportProgress({
 						currentFrame: 1,
 						totalFrames: 1,
 						percentage: 100,
 						estimatedTimeRemaining: 0,
-						phase: "finalizing",
-						renderProgress: 100,
-						phaseDetail: "Saving file...",
 					});
 
-					const arrayBuffer = await result.blob.arrayBuffer();
-					const ext = exportSettings.format === "gif" ? "gif" : "mp4";
-					const fileName = `export-${Date.now()}.${ext}`;
 					const saveResult = await window.electronAPI.saveExportedVideo(arrayBuffer, fileName);
 
 					if (saveResult.cancelled) {
@@ -669,7 +671,6 @@ export default function VideoEditor() {
 						store.setExportProgress(null);
 					} else if (saveResult.success) {
 						toast.success(`${ext.toUpperCase()} exported to ${saveResult.path}`);
-						// Leave dialog open — ExportDialog's success effect will auto-close it
 					} else {
 						store.setExportError(saveResult.message || "Failed to save");
 						toast.error(saveResult.message || "Failed to save");
