@@ -33,17 +33,35 @@ export class StreamingVideoDecoder {
 	private metadata: DecodedVideoInfo | null = null;
 
 	async loadMetadata(videoUrl: string): Promise<DecodedVideoInfo> {
+		console.log("[StreamingDecoder] loadMetadata — fetching:", videoUrl);
 		const response = await fetch(videoUrl);
+		if (!response.ok) {
+			throw new Error(
+				`[StreamingDecoder] fetch failed: ${response.status} ${response.statusText} for ${videoUrl}`,
+			);
+		}
 		const blob = await response.blob();
+		console.log("[StreamingDecoder] fetched blob:", blob.size, "bytes, type:", blob.type);
 		const filename = videoUrl.split("/").pop() || "video";
 		const file = new File([blob], filename, { type: blob.type });
 
 		// Relative URL so it resolves correctly in both dev (http) and packaged (file://) builds
 		const wasmUrl = new URL("./wasm/web-demuxer.wasm", window.location.href).href;
+		console.log("[StreamingDecoder] WASM URL:", wasmUrl);
 		this.demuxer = new WebDemuxer({ wasmFilePath: wasmUrl });
 		await this.demuxer.load(file);
+		console.log("[StreamingDecoder] demuxer loaded successfully");
 
 		const mediaInfo = await this.demuxer.getMediaInfo();
+		console.log("[StreamingDecoder] mediaInfo:", {
+			duration: mediaInfo.duration,
+			streams: mediaInfo.streams.map((s) => ({
+				type: s.codec_type_string,
+				codec: s.codec_string,
+				width: s.width,
+				height: s.height,
+			})),
+		});
 		const videoStream = mediaInfo.streams.find((s) => s.codec_type_string === "video");
 		const audioStream = mediaInfo.streams.find((s) => s.codec_type_string === "audio");
 

@@ -611,6 +611,17 @@ export default function VideoEditor() {
 							? borderRadius * 1.45
 							: borderRadius;
 
+				console.log("[VideoEditor] handleExport — building context", {
+					videoPath,
+					sourceWidth: video.videoWidth,
+					sourceHeight: video.videoHeight,
+					previewWidth: containerEl?.clientWidth,
+					previewHeight: containerEl?.clientHeight,
+					format: exportSettings.format,
+					quality: exportSettings.quality,
+					bitrateMultiplier: exportSettings.bitrateMultiplier,
+				});
+
 				const ctx: ExportContext = {
 					videoPath,
 					sourceWidth: video.videoWidth || 1920,
@@ -643,8 +654,14 @@ export default function VideoEditor() {
 
 				const { promise, handle } = runExport(exportSettings, ctx);
 				exportHandleRef.current = handle;
+				console.log("[VideoEditor] runExport called, awaiting result...");
 
 				const result = await promise;
+				console.log("[VideoEditor] Export result:", {
+					success: result.success,
+					error: result.error,
+					blobSize: result.blob?.size,
+				});
 
 				if (result.success && result.blob) {
 					const arrayBuffer = await result.blob.arrayBuffer();
@@ -684,6 +701,7 @@ export default function VideoEditor() {
 					videoPlaybackRef.current?.play();
 				}
 			} catch (err) {
+				console.error("[VideoEditor] Export threw:", err);
 				const msg = err instanceof Error ? err.message : "Unknown error";
 				store.setExportError(msg);
 				toast.error(`Export failed: ${msg}`);

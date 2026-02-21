@@ -75,9 +75,18 @@ export class VideoExporter {
 			this.cleanup();
 			this.cancelled = false;
 
+			console.log("[VideoExporter] Starting export", {
+				url: this.config.videoUrl,
+				output: `${this.config.width}x${this.config.height}`,
+				bitrate: this.config.bitrate,
+				frameRate: this.config.frameRate,
+				codec: this.config.codec,
+			});
+
 			// Initialize streaming decoder and load video metadata
 			this.streamingDecoder = new StreamingVideoDecoder();
 			const videoInfo = await this.streamingDecoder.loadMetadata(this.config.videoUrl);
+			console.log("[VideoExporter] Metadata loaded:", videoInfo);
 			let audioTrack: DecodedAudioTrack | null = null;
 			try {
 				audioTrack = await this.extractAudioTrack(videoInfo);
@@ -116,13 +125,16 @@ export class VideoExporter {
 				previewHeight: this.config.previewHeight,
 			});
 			await this.renderer.initialize();
+			console.log("[VideoExporter] FrameRenderer initialized");
 
 			// Initialize video encoder
 			await this.initializeEncoder();
+			console.log("[VideoExporter] VideoEncoder initialized");
 
 			// Initialize muxer
 			this.muxer = new VideoMuxer(this.config, Boolean(audioTrack));
 			await this.muxer.initialize();
+			console.log("[VideoExporter] Muxer initialized, hasAudio:", Boolean(audioTrack));
 
 			// Calculate effective duration and frame count (excluding trim regions)
 			const effectiveDuration = this.streamingDecoder.getEffectiveDuration(this.config.trimRegions);

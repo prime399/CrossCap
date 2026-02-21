@@ -114,6 +114,15 @@ function runMp4Export(
 		ctx.aspectRatio,
 	);
 
+	console.log("[ExportOrchestrator] MP4 export starting", {
+		videoPath: ctx.videoPath,
+		source: `${ctx.sourceWidth}x${ctx.sourceHeight}`,
+		output: `${dims.width}x${dims.height}`,
+		bitrate: `${Math.round((dims.bitrate * bitrateMultiplier) / 1_000_000)}Mbps`,
+		quality,
+		bitrateMultiplier,
+	});
+
 	const exporter = new VideoExporter({
 		videoUrl: ctx.videoPath,
 		width: dims.width,
