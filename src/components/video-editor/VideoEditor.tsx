@@ -1,6 +1,6 @@
+import { CaretDown, Check, Crop, FilmSlate, FrameCorners, Timer } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { CaretDown, Check, Crop, FrameCorners } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -637,6 +637,10 @@ export default function VideoEditor() {
 		}
 	}, [store]);
 
+	const projectName = currentProjectPath
+		? currentProjectPath.split(/[\\/]/).pop()
+		: videoSourcePath?.split(/[\\/]/).pop() || "Untitled recording";
+
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center h-screen bg-background">
@@ -662,52 +666,71 @@ export default function VideoEditor() {
 	}
 
 	return (
-		<div className="flex flex-col h-screen bg-cc-surface-0 text-slate-200 overflow-hidden selection:bg-cc-accent/30">
+		<div className="flex h-screen flex-col overflow-hidden bg-cc-surface-0 text-[hsl(var(--cc-text-primary))] selection:bg-cc-accent/30">
 			<div
-				className="h-10 flex-shrink-0 bg-cc-surface-0/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 z-50"
+				className="z-50 flex h-12 flex-shrink-0 items-center justify-between border-b border-white/5 bg-cc-surface-0/80 px-5 backdrop-blur-md"
 				style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
 			>
-				<div className="flex-1" />
+				<div className="flex items-center gap-3">
+					<div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-sky-300 ring-1 ring-white/10">
+						<FilmSlate size={15} weight="duotone" />
+					</div>
+					<div className="leading-tight">
+						<p className="text-[11px] font-semibold tracking-wide text-slate-100">
+							CrossCap Studio
+						</p>
+						<p className="max-w-[320px] truncate text-[10px] text-slate-500">{projectName}</p>
+					</div>
+				</div>
+				<div className="flex items-center gap-2 text-[10px] text-slate-400">
+					<span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1">
+						<Timer size={11} weight="duotone" />
+						{Math.max(0, duration).toFixed(1)}s
+					</span>
+				</div>
 			</div>
 
-			<div className="flex-1 flex flex-col min-h-0">
+			<div className="flex min-h-0 flex-1 flex-col">
 				<PanelGroup direction="vertical">
 					{/* Top section: video preview with floating settings */}
 					<Panel defaultSize={65} minSize={35}>
-						<div className="h-full px-5 pt-5 pb-2">
-							<div className="relative w-full h-full">
+						<div className="h-full px-4 pb-2 pt-4">
+							<div className="relative h-full w-full">
 								{/* Video preview area */}
-								<div className="w-full h-full flex flex-col items-center justify-center bg-black/40 rounded-2xl border border-white/5 shadow-2xl overflow-hidden pr-[300px]">
+								<div className="flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-[hsl(var(--cc-border-strong))]/75 bg-gradient-to-b from-[#10141d] via-[#0b0f17] to-[#080a0f] pr-[324px] shadow-[0_24px_80px_rgba(2,8,23,0.65)]">
 									{/* Aspect ratio + Crop overlay */}
-									<div className="absolute top-4 left-4 z-20 flex items-center gap-1">
+									<div className="absolute left-4 top-4 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 p-1 backdrop-blur-sm">
 										<Button
 											onClick={() => setShowCropModal(true)}
 											variant="ghost"
 											size="sm"
-											className="h-7 px-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all gap-1.5"
+											className="h-8 gap-1.5 rounded-lg border border-transparent px-2.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-white active:scale-[0.98]"
 											title="Crop Video"
 										>
-											<Crop size={14} weight="bold" />
-											<span className="font-medium">Crop</span>
+											<Crop size={14} weight="duotone" />
+											<span>Crop</span>
 										</Button>
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
 												<Button
 													variant="ghost"
 													size="sm"
-													className="h-7 px-2 text-xs text-slate-400 hover:text-slate-200 hover:bg-white/10 transition-all gap-1.5"
+													className="h-8 gap-1.5 rounded-lg border border-transparent px-2.5 text-xs font-medium text-slate-300 transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-white active:scale-[0.98]"
 												>
-													<FrameCorners size={14} weight="bold" />
-													<span className="font-medium">{getAspectRatioLabel(aspectRatio)}</span>
+													<FrameCorners size={14} weight="duotone" />
+													<span>{getAspectRatioLabel(aspectRatio)}</span>
 													<CaretDown size={12} weight="bold" />
 												</Button>
 											</DropdownMenuTrigger>
-											<DropdownMenuContent align="start" className="bg-cc-popover border-white/10">
+											<DropdownMenuContent
+												align="start"
+												className="border-white/10 bg-cc-popover backdrop-blur-xl"
+											>
 												{ASPECT_RATIOS.map((ratio) => (
 													<DropdownMenuItem
 														key={ratio}
 														onClick={() => store.setAspectRatio(ratio)}
-														className="text-slate-300 hover:text-white hover:bg-white/10 cursor-pointer flex items-center justify-between gap-3"
+														className="flex cursor-pointer items-center justify-between gap-3 text-slate-300 hover:bg-white/10 hover:text-white"
 													>
 														<span>{getAspectRatioLabel(ratio)}</span>
 														{aspectRatio === ratio && (
@@ -721,7 +744,7 @@ export default function VideoEditor() {
 									{/* Video preview */}
 									<div
 										className="w-full flex justify-center items-center"
-										style={{ flex: "1 1 auto", margin: "6px 0 0" }}
+										style={{ flex: "1 1 auto", margin: "10px 0 0" }}
 									>
 										<div
 											className="relative"
@@ -732,7 +755,7 @@ export default function VideoEditor() {
 												maxWidth: "100%",
 												margin: "0 auto",
 												boxSizing: "border-box",
-												transform: "scale(1.08) translateX(-2%)",
+												transform: "scale(1.05) translateX(-1.3%)",
 												transformOrigin: "center center",
 											}}
 										>
@@ -772,10 +795,10 @@ export default function VideoEditor() {
 									<div
 										className="w-full flex justify-center items-center"
 										style={{
-											height: "48px",
+											height: "54px",
 											flexShrink: 0,
-											padding: "6px 12px",
-											margin: "6px 0 6px 0",
+											padding: "8px 14px",
+											margin: "8px 0",
 										}}
 									>
 										<div style={{ width: "100%", maxWidth: "700px" }}>
@@ -791,7 +814,7 @@ export default function VideoEditor() {
 								</div>
 
 								{/* Floating settings panel */}
-								<div className="absolute top-3 right-3 z-30 w-[310px] max-h-[calc(100%-24px)]">
+								<div className="absolute right-3 top-3 z-30 max-h-[calc(100%-24px)] w-[328px]">
 									<SettingsPanel
 										selected={wallpaper}
 										onWallpaperChange={setWallpaper}
@@ -869,13 +892,13 @@ export default function VideoEditor() {
 					</Panel>
 
 					<PanelResizeHandle className="h-2 flex items-center justify-center">
-						<div className="w-10 h-1 bg-white/10 rounded-full hover:bg-white/20 transition-colors"></div>
+						<div className="h-1 w-12 rounded-full bg-white/10 transition-colors hover:bg-white/20"></div>
 					</PanelResizeHandle>
 
 					{/* Timeline section - full width */}
 					<Panel defaultSize={35} minSize={20}>
-						<div className="h-full px-5 pb-4">
-							<div className="h-full bg-cc-surface-0 rounded-2xl border border-white/5 shadow-lg overflow-hidden flex flex-col">
+						<div className="h-full px-4 pb-4">
+							<div className="flex h-full flex-col overflow-hidden rounded-2xl border border-[hsl(var(--cc-border-strong))]/70 bg-gradient-to-b from-[#0e131c] to-[#080b11] shadow-xl">
 								<TimelineEditor
 									videoDuration={duration}
 									currentTime={currentTime}
