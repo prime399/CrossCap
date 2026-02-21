@@ -24,7 +24,8 @@ type OnFrameCallback = (
  * Way faster than seeking an HTMLVideoElement per frame.
  *
  * Frames in trimmed regions are decoded (needed for P/B-frame state) but discarded.
- * Non-trimmed frames get buffered per segment and resampled to the target frame rate.
+ * Non-trimmed frames are delivered immediately with VFR→CFR resampling using a
+ * sliding window of at most 2 source frames — no unbounded buffering.
  */
 export class StreamingVideoDecoder {
 	private demuxer: WebDemuxer | null = null;
@@ -120,6 +121,7 @@ export class StreamingVideoDecoder {
 		const segments = this.computeSegments(this.metadata.duration, trimRegions);
 		console.log("[StreamingDecoder] segments:", segments);
 		const frameDurationUs = 1_000_000 / targetFrameRate;
+		const frameDurationSec = 1 / targetFrameRate;
 
 		// Async frame queue — decoder pushes, consumer pulls
 		const pendingFrames: VideoFrame[] = [];
@@ -131,7 +133,7 @@ export class StreamingVideoDecoder {
 		this.decoder = new VideoDecoder({
 			output: (frame: VideoFrame) => {
 				decodedFrameCount++;
-				if (decodedFrameCount <= 3 || decodedFrameCount % 100 === 0) {
+				if (decodedFrameCount <= 3 || decodedFrameCount % 200 === 0) {
 					console.log(`[StreamingDecoder] decoder output frame #${decodedFrameCount}`, {
 						timestamp: frame.timestamp,
 						duration: frame.duration,
@@ -178,7 +180,6 @@ export class StreamingVideoDecoder {
 						resolve(null);
 					}
 				}, 100);
-				// Wrap resolve to clear the interval when settled normally
 				frameResolve = (frame) => {
 					clearInterval(cancelCheck);
 					resolve(frame);
@@ -200,7 +201,7 @@ export class StreamingVideoDecoder {
 						break;
 					}
 					chunksRead++;
-					if (chunksRead <= 3 || chunksRead % 100 === 0) {
+					if (chunksRead <= 3 || chunksRead % 200 === 0) {
 						console.log(`[StreamingDecoder] feeding chunk #${chunksRead}`, {
 							type: chunk.type,
 							timestamp: chunk.timestamp,
@@ -239,11 +240,16 @@ export class StreamingVideoDecoder {
 			}
 		})();
 
-		// Route decoded frames into segments by timestamp, then deliver with VFR→CFR resampling
+		// --- Streaming VFR→CFR delivery ---
+		// Instead of buffering all frames per segment, deliver CFR frames on-the-fly.
+		// Keep a sliding window: when a new source frame arrives at time T, emit all
+		// CFR frames between the previous source frame and T using the previous frame.
+		// This keeps at most 2 VideoFrames in memory at any time.
 		let segmentIdx = 0;
 		let exportFrameIndex = 0;
-		let segmentBuffer: VideoFrame[] = [];
 		let routedFrameCount = 0;
+		let prevFrame: VideoFrame | null = null;
+		let nextExportTimeSec = 0;
 
 		while (!this.cancelled && segmentIdx < segments.length) {
 			const frame = await getNextFrame();
@@ -262,12 +268,12 @@ export class StreamingVideoDecoder {
 			const frameTimeSec = frame.timestamp / 1_000_000;
 			const currentSegment = segments[segmentIdx];
 
-			if (routedFrameCount <= 5 || routedFrameCount % 100 === 0) {
+			if (routedFrameCount <= 5 || routedFrameCount % 200 === 0) {
 				console.log(`[StreamingDecoder] routing frame #${routedFrameCount}`, {
 					frameTimeSec: frameTimeSec.toFixed(3),
 					segmentIdx,
 					segmentRange: `${currentSegment.startSec.toFixed(3)}-${currentSegment.endSec.toFixed(3)}`,
-					bufferSize: segmentBuffer.length,
+					exportFrameIndex,
 				});
 			}
 
@@ -277,26 +283,28 @@ export class StreamingVideoDecoder {
 				continue;
 			}
 
-			// Past current segment — flush buffer and advance
+			// Past current segment — flush remaining CFR frames and advance
 			if (frameTimeSec >= currentSegment.endSec - 0.001) {
-				try {
-					exportFrameIndex = await this.deliverSegment(
-						segmentBuffer,
-						currentSegment,
-						targetFrameRate,
-						frameDurationUs,
-						exportFrameIndex,
-						onFrame,
-					);
-				} catch (err) {
-					frame.close();
-					throw err;
-				} finally {
-					for (const f of segmentBuffer) f.close();
-					segmentBuffer = [];
+				// Emit remaining CFR frames for this segment using prevFrame
+				if (prevFrame) {
+					const segEndRelative = currentSegment.endSec - currentSegment.startSec;
+					while (nextExportTimeSec < segEndRelative - 0.0001 && !this.cancelled) {
+						exportFrameIndex = await this.emitFrame(
+							prevFrame,
+							exportFrameIndex,
+							frameDurationUs,
+							onFrame,
+						);
+						nextExportTimeSec += frameDurationSec;
+					}
+					prevFrame.close();
+					prevFrame = null;
 				}
 
+				// Advance to next segment
 				segmentIdx++;
+				nextExportTimeSec = 0;
+
 				while (
 					segmentIdx < segments.length &&
 					frameTimeSec >= segments[segmentIdx].endSec - 0.001
@@ -304,31 +312,59 @@ export class StreamingVideoDecoder {
 					segmentIdx++;
 				}
 
+				// Check if frame belongs to the new segment
 				if (segmentIdx < segments.length && frameTimeSec >= segments[segmentIdx].startSec - 0.001) {
-					segmentBuffer.push(frame);
+					prevFrame = frame;
+					nextExportTimeSec = 0;
 				} else {
 					frame.close();
 				}
 				continue;
 			}
 
-			segmentBuffer.push(frame);
-		}
+			// Inside current segment — streaming CFR delivery
+			const frameRelativeSec = frameTimeSec - currentSegment.startSec;
 
-		// Flush last segment
-		if (segmentBuffer.length > 0 && segmentIdx < segments.length) {
-			try {
-				exportFrameIndex = await this.deliverSegment(
-					segmentBuffer,
-					segments[segmentIdx],
-					targetFrameRate,
-					frameDurationUs,
+			if (!prevFrame) {
+				// First frame in segment
+				prevFrame = frame;
+				nextExportTimeSec = 0;
+				continue;
+			}
+
+			// Emit CFR frames up to this source frame's timestamp using prevFrame
+			while (nextExportTimeSec < frameRelativeSec - 0.0001 && !this.cancelled) {
+				exportFrameIndex = await this.emitFrame(
+					prevFrame,
 					exportFrameIndex,
+					frameDurationUs,
 					onFrame,
 				);
-			} finally {
-				for (const f of segmentBuffer) f.close();
+				nextExportTimeSec += frameDurationSec;
 			}
+
+			// Replace prevFrame with current
+			prevFrame.close();
+			prevFrame = frame;
+		}
+
+		// Flush last segment: emit remaining CFR frames
+		if (prevFrame && segmentIdx < segments.length && !this.cancelled) {
+			const currentSegment = segments[segmentIdx];
+			const segEndRelative = currentSegment.endSec - currentSegment.startSec;
+			while (nextExportTimeSec < segEndRelative - 0.0001 && !this.cancelled) {
+				exportFrameIndex = await this.emitFrame(
+					prevFrame,
+					exportFrameIndex,
+					frameDurationUs,
+					onFrame,
+				);
+				nextExportTimeSec += frameDurationSec;
+			}
+		}
+		if (prevFrame) {
+			prevFrame.close();
+			prevFrame = null;
 		}
 
 		// Drain leftover decoded frames
@@ -360,39 +396,23 @@ export class StreamingVideoDecoder {
 	}
 
 	/**
-	 * Resample buffered frames to fill the target frame count for this segment.
-	 * Handles VFR sources by duplicating/decimating as needed.
+	 * Emit a single CFR frame by cloning the source and calling onFrame.
+	 * Returns the next exportFrameIndex.
 	 */
-	private async deliverSegment(
-		frames: VideoFrame[],
-		segment: { startSec: number; endSec: number },
-		targetFrameRate: number,
+	private async emitFrame(
+		sourceFrame: VideoFrame,
+		exportFrameIndex: number,
 		frameDurationUs: number,
-		startExportFrameIndex: number,
 		onFrame: OnFrameCallback,
 	): Promise<number> {
-		if (frames.length === 0) return startExportFrameIndex;
-
-		const segmentFrameCount = Math.ceil((segment.endSec - segment.startSec) * targetFrameRate);
-		let exportFrameIndex = startExportFrameIndex;
-
-		for (let i = 0; i < segmentFrameCount && !this.cancelled; i++) {
-			const sourceIdx = Math.min(
-				Math.floor((i * frames.length) / segmentFrameCount),
-				frames.length - 1,
-			);
-			const sourceFrame = frames[sourceIdx];
-			const clone = new VideoFrame(sourceFrame, { timestamp: sourceFrame.timestamp });
-			try {
-				await onFrame(clone, exportFrameIndex * frameDurationUs, sourceFrame.timestamp / 1000);
-			} catch (err) {
-				clone.close();
-				throw err;
-			}
-			exportFrameIndex++;
+		const clone = new VideoFrame(sourceFrame, { timestamp: sourceFrame.timestamp });
+		try {
+			await onFrame(clone, exportFrameIndex * frameDurationUs, sourceFrame.timestamp / 1000);
+		} catch (err) {
+			clone.close();
+			throw err;
 		}
-
-		return exportFrameIndex;
+		return exportFrameIndex + 1;
 	}
 
 	private computeSegments(
@@ -431,7 +451,7 @@ export class StreamingVideoDecoder {
 
 	/**
 	 * Compute total export frame count by summing per-segment counts.
-	 * This matches the actual frame delivery in deliverSegment() and avoids
+	 * This matches the actual frame delivery in the streaming loop and avoids
 	 * floating-point drift from computing ceil(totalDuration * fps).
 	 */
 	getEffectiveFrameCount(trimRegions: TrimRegion[] | undefined, targetFrameRate: number): number {
