@@ -122,6 +122,8 @@ export class GifExporter {
 			console.log("[GifExporter] Using streaming decode (web-demuxer + VideoDecoder)");
 
 			let frameIndex = 0;
+			const renderStartMs = performance.now();
+			let smoothedEtaSeconds = 0;
 
 			// Stream decode and process frames — no seeking!
 			await this.streamingDecoder.decodeAll(
@@ -145,6 +147,15 @@ export class GifExporter {
 					this.gif!.addFrame(canvas, { delay: frameDelay, copy: true });
 
 					frameIndex++;
+					const elapsedSeconds = Math.max((performance.now() - renderStartMs) / 1000, 0.001);
+					const framesPerSecond = frameIndex / elapsedSeconds;
+					const remainingFrames = Math.max(totalFrames - frameIndex, 0);
+					const rawEtaSeconds =
+						framesPerSecond > 0 ? remainingFrames / framesPerSecond : smoothedEtaSeconds;
+					smoothedEtaSeconds =
+						frameIndex <= 1 || smoothedEtaSeconds <= 0
+							? rawEtaSeconds
+							: smoothedEtaSeconds * 0.8 + rawEtaSeconds * 0.2;
 
 					// Update progress
 					if (this.config.onProgress) {
@@ -152,7 +163,7 @@ export class GifExporter {
 							currentFrame: frameIndex,
 							totalFrames,
 							percentage: (frameIndex / totalFrames) * 100,
-							estimatedTimeRemaining: 0,
+							estimatedTimeRemaining: Math.max(0, smoothedEtaSeconds),
 						});
 					}
 				},
@@ -168,7 +179,7 @@ export class GifExporter {
 					currentFrame: totalFrames,
 					totalFrames,
 					percentage: 100,
-					estimatedTimeRemaining: 0,
+					estimatedTimeRemaining: Math.max(3, smoothedEtaSeconds * 0.25),
 					phase: "finalizing",
 					renderProgress: 0,
 					phaseDetail: "Preparing GIF encoder",
@@ -177,18 +188,27 @@ export class GifExporter {
 
 			// Render the GIF
 			const blob = await new Promise<Blob>((resolve, _reject) => {
+				const compileStartMs = performance.now();
+				let compileEtaSeconds = Math.max(3, smoothedEtaSeconds * 0.25);
 				this.gif!.on("finished", (blob: Blob) => {
 					resolve(blob);
 				});
 
 				// Track rendering progress
 				this.gif!.on("progress", (progress: number) => {
+					const elapsedSeconds = Math.max((performance.now() - compileStartMs) / 1000, 0.001);
+					const normalizedProgress = Math.max(progress, 0.001);
+					const rawEtaSeconds = Math.max(
+						0,
+						elapsedSeconds * ((1 - normalizedProgress) / normalizedProgress),
+					);
+					compileEtaSeconds = compileEtaSeconds * 0.7 + rawEtaSeconds * 0.3;
 					if (this.config.onProgress) {
 						this.config.onProgress({
 							currentFrame: totalFrames,
 							totalFrames,
 							percentage: 100,
-							estimatedTimeRemaining: 0,
+							estimatedTimeRemaining: Math.max(0, compileEtaSeconds),
 							phase: "finalizing",
 							renderProgress: Math.round(progress * 100),
 							phaseDetail: "Encoding GIF frames",

@@ -23,6 +23,16 @@ export function ExportDialog({
 	exportFormat = "mp4",
 }: ExportDialogProps) {
 	const [showSuccess, setShowSuccess] = useState(false);
+	const formatEta = (seconds: number) => {
+		const safeSeconds = Math.max(0, Math.round(seconds));
+		const hours = Math.floor(safeSeconds / 3600);
+		const minutes = Math.floor((safeSeconds % 3600) / 60);
+		const remainingSeconds = safeSeconds % 60;
+		if (hours > 0) {
+			return `${hours}:${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+		}
+		return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+	};
 
 	// Reset showSuccess when a new export starts or dialog reopens
 	useEffect(() => {
@@ -65,6 +75,11 @@ export function ExportDialog({
 		typeof progress?.percentage === "number" ? Math.max(0, Math.min(100, progress.percentage)) : 0;
 	const visibleProgress = isFinalizing ? (renderProgress ?? frameProgress) : frameProgress;
 	const statusDetail = progress?.phaseDetail;
+	const etaSeconds =
+		typeof progress?.estimatedTimeRemaining === "number"
+			? Math.max(0, progress.estimatedTimeRemaining)
+			: 0;
+	const etaLabel = etaSeconds > 0 ? formatEta(etaSeconds) : "Calculating...";
 
 	// Get status message based on phase
 	const getStatusMessage = () => {
@@ -173,7 +188,7 @@ export function ExportDialog({
 							</div>
 						</div>
 
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid grid-cols-3 gap-4">
 							<div className="bg-white/5 rounded-xl p-3 border border-white/5">
 								<div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
 									{isFinalizingMp4 || isCompiling || isFinalizing ? "Status" : "Format"}
@@ -185,6 +200,10 @@ export function ExportDialog({
 											? "Compiling..."
 											: formatLabel}
 								</div>
+							</div>
+							<div className="bg-white/5 rounded-xl p-3 border border-white/5">
+								<div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">ETA</div>
+								<div className="text-slate-200 font-medium text-sm font-mono">{etaLabel}</div>
 							</div>
 							<div className="bg-white/5 rounded-xl p-3 border border-white/5">
 								<div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
