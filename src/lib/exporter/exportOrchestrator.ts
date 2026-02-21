@@ -27,9 +27,16 @@ export interface ExportContext {
 	zoomRegions: ZoomRegion[];
 	trimRegions: TrimRegion[];
 	shadowIntensity: number;
+	shadowSize: number;
+	shadowOpacity: number;
+	shadowBlur: number;
 	showBlur: boolean;
 	motionBlurEnabled: boolean;
 	borderRadius: number;
+	borderEnabled: boolean;
+	borderWidth: number;
+	borderColor: string;
+	borderOpacity: number;
 	padding: number;
 	cropRegion: CropRegion;
 	annotationRegions: AnnotationRegion[];
@@ -69,9 +76,16 @@ function runGifExport(
 		trimRegions: ctx.trimRegions,
 		showShadow: ctx.shadowIntensity > 0,
 		shadowIntensity: ctx.shadowIntensity,
+		shadowSize: ctx.shadowSize,
+		shadowOpacity: ctx.shadowOpacity,
+		shadowBlur: ctx.shadowBlur,
 		showBlur: ctx.showBlur,
 		motionBlurEnabled: ctx.motionBlurEnabled,
 		borderRadius: ctx.borderRadius,
+		borderEnabled: ctx.borderEnabled,
+		borderWidth: ctx.borderWidth,
+		borderColor: ctx.borderColor,
+		borderOpacity: ctx.borderOpacity,
 		padding: ctx.padding,
 		videoPadding: ctx.padding,
 		cropRegion: ctx.cropRegion,
@@ -111,9 +125,16 @@ function runMp4Export(
 		trimRegions: ctx.trimRegions,
 		showShadow: ctx.shadowIntensity > 0,
 		shadowIntensity: ctx.shadowIntensity,
+		shadowSize: ctx.shadowSize,
+		shadowOpacity: ctx.shadowOpacity,
+		shadowBlur: ctx.shadowBlur,
 		showBlur: ctx.showBlur,
 		motionBlurEnabled: ctx.motionBlurEnabled,
 		borderRadius: ctx.borderRadius,
+		borderEnabled: ctx.borderEnabled,
+		borderWidth: ctx.borderWidth,
+		borderColor: ctx.borderColor,
+		borderOpacity: ctx.borderOpacity,
 		padding: ctx.padding,
 		cropRegion: ctx.cropRegion,
 		annotationRegions: ctx.annotationRegions,

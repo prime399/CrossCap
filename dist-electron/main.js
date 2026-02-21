@@ -425,6 +425,7 @@ function createEditorWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
+    autoHideMenuBar: true,
     ...isMac && {
       titleBarStyle: "hiddenInset",
       trafficLightPosition: { x: 12, y: 12 }
@@ -444,6 +445,7 @@ function createEditorWindow() {
     }
   });
   win.maximize();
+  win.setMenuBarVisibility(false);
   win.webContents.on("did-finish-load", () => {
     win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
   });

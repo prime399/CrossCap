@@ -7,12 +7,7 @@ import type {
 } from "@/components/video-editor/types";
 import { FrameRenderer } from "./frameRenderer";
 import { StreamingVideoDecoder } from "./streamingDecoder";
-import type {
-	ExportProgress,
-	ExportResult,
-	GifFrameRate,
-	GifSizePreset,
-} from "./types";
+import type { ExportProgress, ExportResult, GifFrameRate, GifSizePreset } from "./types";
 
 const GIF_WORKER_URL = new URL("gif.js/dist/gif.worker.js", import.meta.url).toString();
 
@@ -28,9 +23,16 @@ interface GifExporterConfig {
 	trimRegions?: TrimRegion[];
 	showShadow: boolean;
 	shadowIntensity: number;
+	shadowSize?: number;
+	shadowOpacity?: number;
+	shadowBlur?: number;
 	showBlur: boolean;
 	motionBlurEnabled?: boolean;
 	borderRadius?: number;
+	borderEnabled?: boolean;
+	borderWidth?: number;
+	borderColor?: string;
+	borderOpacity?: number;
 	padding?: number;
 	videoPadding?: number;
 	cropRegion: CropRegion;
@@ -68,9 +70,16 @@ export class GifExporter {
 				zoomRegions: this.config.zoomRegions,
 				showShadow: this.config.showShadow,
 				shadowIntensity: this.config.shadowIntensity,
+				shadowSize: this.config.shadowSize,
+				shadowOpacity: this.config.shadowOpacity,
+				shadowBlur: this.config.shadowBlur,
 				showBlur: this.config.showBlur,
 				motionBlurEnabled: this.config.motionBlurEnabled,
 				borderRadius: this.config.borderRadius,
+				borderEnabled: this.config.borderEnabled,
+				borderWidth: this.config.borderWidth,
+				borderColor: this.config.borderColor,
+				borderOpacity: this.config.borderOpacity,
 				padding: this.config.padding,
 				cropRegion: this.config.cropRegion,
 				videoWidth: videoInfo.width,

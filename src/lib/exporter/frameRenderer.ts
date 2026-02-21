@@ -18,9 +18,16 @@ interface FrameRenderConfig {
 	zoomRegions: ZoomRegion[];
 	showShadow: boolean;
 	shadowIntensity: number;
+	shadowSize?: number;
+	shadowOpacity?: number;
+	shadowBlur?: number;
 	showBlur: boolean;
 	motionBlurEnabled?: boolean;
 	borderRadius?: number;
+	borderEnabled?: boolean;
+	borderWidth?: number;
+	borderColor?: string;
+	borderOpacity?: number;
 	padding?: number;
 	cropRegion: CropRegion;
 	videoWidth: number;
@@ -34,6 +41,23 @@ interface AnimationState {
 	scale: number;
 	focusX: number;
 	focusY: number;
+}
+
+function hexToRgba(hexColor: string, opacity: number): string {
+	const hex = hexColor.trim().replace("#", "");
+	const fullHex =
+		hex.length === 3
+			? hex
+					.split("")
+					.map((ch) => `${ch}${ch}`)
+					.join("")
+			: hex.padEnd(6, "0");
+	const parsed = Number.parseInt(fullHex.slice(0, 6), 16);
+	if (Number.isNaN(parsed)) return `rgba(0,0,0,${opacity})`;
+	const r = (parsed >> 16) & 255;
+	const g = (parsed >> 8) & 255;
+	const b = parsed & 255;
+	return `rgba(${r},${g},${b},${opacity})`;
 }
 
 // Renders video frames with all effects (background, zoom, crop, blur, shadow) to an offscreen canvas for export.
@@ -400,6 +424,7 @@ export class FrameRenderer {
 			baseScale: scale,
 			baseOffset: { x: centerOffsetX, y: centerOffsetY },
 			maskRect: { x: 0, y: 0, width: croppedDisplayWidth, height: croppedDisplayHeight },
+			borderRadius: scaledBorderRadius,
 		};
 	}
 
@@ -512,22 +537,52 @@ export class FrameRenderer {
 			shadowCtx.clearRect(0, 0, w, h);
 			shadowCtx.save();
 
-			// Calculate shadow parameters based on intensity (0-1)
-			const intensity = this.config.shadowIntensity;
-			const baseBlur1 = 48 * intensity;
-			const baseBlur2 = 16 * intensity;
-			const baseBlur3 = 8 * intensity;
-			const baseAlpha1 = 0.7 * intensity;
-			const baseAlpha2 = 0.5 * intensity;
-			const baseAlpha3 = 0.3 * intensity;
-			const baseOffset = 12 * intensity;
+			const previewWidth = this.config.previewWidth || this.config.width;
+			const previewHeight = this.config.previewHeight || this.config.height;
+			const canvasScaleFactor = Math.min(w / previewWidth, h / previewHeight);
+			const shadowSize = this.config.shadowSize ?? 0.4;
+			const shadowBlur = this.config.shadowBlur ?? 0.45;
+			const shadowOpacity = this.config.shadowOpacity ?? 0.6;
+			const shadowYOffset = (4 + shadowSize * 18) * canvasScaleFactor;
+			const shadowBlurPx = (10 + shadowBlur * 64) * canvasScaleFactor;
+			const shadowAlpha = Math.max(0, Math.min(1, shadowOpacity * this.config.shadowIntensity));
 
-			shadowCtx.filter = `drop-shadow(0 ${baseOffset}px ${baseBlur1}px rgba(0,0,0,${baseAlpha1})) drop-shadow(0 ${baseOffset / 3}px ${baseBlur2}px rgba(0,0,0,${baseAlpha2})) drop-shadow(0 ${baseOffset / 6}px ${baseBlur3}px rgba(0,0,0,${baseAlpha3}))`;
+			shadowCtx.filter = `drop-shadow(0 ${shadowYOffset}px ${shadowBlurPx}px rgba(0,0,0,${shadowAlpha})) drop-shadow(0 ${Math.max(1, shadowYOffset * 0.45)}px ${Math.max(4, shadowBlurPx * 0.42)}px rgba(0,0,0,${shadowAlpha * 0.72}))`;
 			shadowCtx.drawImage(videoCanvas, 0, 0, w, h);
 			shadowCtx.restore();
 			ctx.drawImage(this.shadowCanvas, 0, 0, w, h);
 		} else {
 			ctx.drawImage(videoCanvas, 0, 0, w, h);
+		}
+
+		if (this.config.borderEnabled && this.layoutCache) {
+			const borderWidth = Math.max(0, this.config.borderWidth ?? 0);
+			if (borderWidth > 0) {
+				const previewWidth = this.config.previewWidth || this.config.width;
+				const previewHeight = this.config.previewHeight || this.config.height;
+				const canvasScaleFactor = Math.min(w / previewWidth, h / previewHeight);
+				const scaledBorderWidth = Math.max(1, borderWidth * canvasScaleFactor);
+				const borderColor = hexToRgba(
+					this.config.borderColor ?? "#000000",
+					this.config.borderOpacity ?? 0.85,
+				);
+				const { x, y, width: borderW, height: borderH } = this.layoutCache.maskRect;
+				const radius = this.layoutCache.borderRadius ?? 0;
+
+				ctx.save();
+				ctx.strokeStyle = borderColor;
+				ctx.lineWidth = scaledBorderWidth;
+				ctx.beginPath();
+				ctx.roundRect(
+					x + scaledBorderWidth / 2,
+					y + scaledBorderWidth / 2,
+					Math.max(0, borderW - scaledBorderWidth),
+					Math.max(0, borderH - scaledBorderWidth),
+					radius,
+				);
+				ctx.stroke();
+				ctx.restore();
+			}
 		}
 	}
 

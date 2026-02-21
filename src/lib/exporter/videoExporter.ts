@@ -16,9 +16,16 @@ interface VideoExporterConfig extends ExportConfig {
 	trimRegions?: TrimRegion[];
 	showShadow: boolean;
 	shadowIntensity: number;
+	shadowSize?: number;
+	shadowOpacity?: number;
+	shadowBlur?: number;
 	showBlur: boolean;
 	motionBlurEnabled?: boolean;
 	borderRadius?: number;
+	borderEnabled?: boolean;
+	borderWidth?: number;
+	borderColor?: string;
+	borderOpacity?: number;
 	padding?: number;
 	videoPadding?: number;
 	cropRegion: CropRegion;
@@ -86,9 +93,16 @@ export class VideoExporter {
 				zoomRegions: this.config.zoomRegions,
 				showShadow: this.config.showShadow,
 				shadowIntensity: this.config.shadowIntensity,
+				shadowSize: this.config.shadowSize,
+				shadowOpacity: this.config.shadowOpacity,
+				shadowBlur: this.config.shadowBlur,
 				showBlur: this.config.showBlur,
 				motionBlurEnabled: this.config.motionBlurEnabled,
 				borderRadius: this.config.borderRadius,
+				borderEnabled: this.config.borderEnabled,
+				borderWidth: this.config.borderWidth,
+				borderColor: this.config.borderColor,
+				borderOpacity: this.config.borderOpacity,
 				padding: this.config.padding,
 				cropRegion: this.config.cropRegion,
 				videoWidth: videoInfo.width,
@@ -216,17 +230,13 @@ export class VideoExporter {
 			}
 
 			reportFinalizing("waiting for muxing to complete");
-			console.log(
-				`[VideoExporter] Waiting for ${this.muxingPromises.length} muxing ops`,
-			);
+			console.log(`[VideoExporter] Waiting for ${this.muxingPromises.length} muxing ops`);
 			await Promise.all(this.muxingPromises);
 			console.log("[VideoExporter] All muxing operations complete");
 
 			reportFinalizing("writing MP4 container");
 			const blob = await this.muxer!.finalize();
-			console.log(
-				`[VideoExporter] Export done — ${(blob.size / 1024 / 1024).toFixed(1)} MB`,
-			);
+			console.log(`[VideoExporter] Export done — ${(blob.size / 1024 / 1024).toFixed(1)} MB`);
 
 			return { success: true, blob };
 		} catch (error) {

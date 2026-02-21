@@ -568,6 +568,12 @@ export default function VideoEditor() {
 				}
 
 				const containerEl = videoPlaybackRef.current?.containerRef?.current;
+				const exportBorderRadius =
+					cornerStyle === "sharp"
+						? 0
+						: cornerStyle === "squircle"
+							? borderRadius * 1.45
+							: borderRadius;
 
 				const ctx: ExportContext = {
 					videoPath,
@@ -581,9 +587,16 @@ export default function VideoEditor() {
 					zoomRegions,
 					trimRegions,
 					shadowIntensity,
+					shadowSize,
+					shadowOpacity,
+					shadowBlur,
 					showBlur,
 					motionBlurEnabled,
-					borderRadius,
+					borderRadius: exportBorderRadius,
+					borderEnabled,
+					borderWidth,
+					borderColor,
+					borderOpacity,
 					padding,
 					cropRegion,
 					annotationRegions,
@@ -636,9 +649,17 @@ export default function VideoEditor() {
 			zoomRegions,
 			trimRegions,
 			shadowIntensity,
+			shadowSize,
+			shadowOpacity,
+			shadowBlur,
 			showBlur,
 			motionBlurEnabled,
 			borderRadius,
+			cornerStyle,
+			borderEnabled,
+			borderWidth,
+			borderColor,
+			borderOpacity,
 			padding,
 			cropRegion,
 			annotationRegions,
