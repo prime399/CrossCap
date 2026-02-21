@@ -1,14 +1,14 @@
-import type { Range, Span } from "dnd-timeline";
-import { useTimelineContext } from "dnd-timeline";
 import {
 	ChatText,
-	MagnifyingGlassPlus,
 	MagicWand,
+	MagnifyingGlassPlus,
 	Plus,
 	Scissors,
 	SkipBack,
 	SkipForward,
 } from "@phosphor-icons/react";
+import type { Range, Span } from "dnd-timeline";
+import { useTimelineContext } from "dnd-timeline";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -23,6 +23,10 @@ import type {
 	ZoomFocus,
 	ZoomRegion,
 } from "../types";
+import {
+	calculateDefaultRegionDurationMs,
+	generateAutoZoomSuggestions,
+} from "./autoZoomSuggestions";
 import Item from "./Item";
 import KeyframeMarkers from "./KeyframeMarkers";
 import Row from "./Row";
@@ -33,11 +37,6 @@ const TRIM_ROW_ID = "row-trim";
 const ANNOTATION_ROW_ID = "row-annotation";
 const FALLBACK_RANGE_MS = 1000;
 const TARGET_MARKER_COUNT = 12;
-const MIN_DWELL_DURATION_MS = 450;
-const MAX_DWELL_DURATION_MS = 2600;
-const DWELL_MOVE_THRESHOLD = 0.02;
-const SUGGESTION_SPACING_MS = 1800;
-
 interface TimelineEditorProps {
 	videoDuration: number;
 	currentTime: number;
@@ -737,10 +736,8 @@ export default function TimelineEditor({
 		[zoomRegions, trimRegions, annotationRegions],
 	);
 
-	// At least 5% of the timeline or 1000ms, whichever is larger, so the region
-	// is always wide enough to grab and resize comfortably.
 	const defaultRegionDurationMs = useMemo(
-		() => Math.max(1000, Math.round(totalMs * 0.05)),
+		() => calculateDefaultRegionDurationMs(totalMs),
 		[totalMs],
 	);
 
@@ -798,122 +795,51 @@ export default function TimelineEditor({
 			return;
 		}
 
-		const reservedSpans = [...zoomRegions]
-			.map((region) => ({ start: region.startMs, end: region.endMs }))
-			.sort((a, b) => a.start - b.start);
+		const result = generateAutoZoomSuggestions({
+			totalMs,
+			defaultDurationMs: defaultDuration,
+			cursorTelemetry,
+			zoomRegions,
+			trimRegions,
+		});
 
-		const normalizedSamples = [...cursorTelemetry]
-			.filter(
-				(sample) =>
-					Number.isFinite(sample.timeMs) &&
-					Number.isFinite(sample.cx) &&
-					Number.isFinite(sample.cy),
-			)
-			.sort((a, b) => a.timeMs - b.timeMs)
-			.map((sample) => ({
-				timeMs: Math.max(0, Math.min(sample.timeMs, totalMs)),
-				cx: Math.max(0, Math.min(sample.cx, 1)),
-				cy: Math.max(0, Math.min(sample.cy, 1)),
-			}));
-
-		if (normalizedSamples.length < 2) {
+		if (result.type === "no_usable_cursor_telemetry") {
 			toast.info("No usable cursor telemetry", {
 				description: "The recording does not include enough cursor movement data.",
 			});
 			return;
 		}
 
-		const dwellCandidates: Array<{ centerTimeMs: number; focus: ZoomFocus; strength: number }> = [];
-		let runStart = 0;
-
-		const pushRunIfDwell = (startIndex: number, endIndexExclusive: number) => {
-			if (endIndexExclusive - startIndex < 2) {
-				return;
-			}
-
-			const start = normalizedSamples[startIndex];
-			const end = normalizedSamples[endIndexExclusive - 1];
-			const runDuration = end.timeMs - start.timeMs;
-			if (runDuration < MIN_DWELL_DURATION_MS || runDuration > MAX_DWELL_DURATION_MS) {
-				return;
-			}
-
-			const runSamples = normalizedSamples.slice(startIndex, endIndexExclusive);
-			const avgCx = runSamples.reduce((sum, sample) => sum + sample.cx, 0) / runSamples.length;
-			const avgCy = runSamples.reduce((sum, sample) => sum + sample.cy, 0) / runSamples.length;
-
-			dwellCandidates.push({
-				centerTimeMs: Math.round((start.timeMs + end.timeMs) / 2),
-				focus: { cx: avgCx, cy: avgCy },
-				strength: runDuration,
-			});
-		};
-
-		for (let index = 1; index < normalizedSamples.length; index += 1) {
-			const prev = normalizedSamples[index - 1];
-			const curr = normalizedSamples[index];
-			const dx = curr.cx - prev.cx;
-			const dy = curr.cy - prev.cy;
-			const distance = Math.hypot(dx, dy);
-
-			if (distance > DWELL_MOVE_THRESHOLD) {
-				pushRunIfDwell(runStart, index);
-				runStart = index;
-			}
-		}
-		pushRunIfDwell(runStart, normalizedSamples.length);
-
-		if (dwellCandidates.length === 0) {
+		if (result.type === "no_dwell_candidates") {
 			toast.info("No clear cursor dwell moments found", {
 				description: "Try a recording with slower cursor pauses on important actions.",
 			});
 			return;
 		}
 
-		const sortedCandidates = [...dwellCandidates].sort((a, b) => b.strength - a.strength);
-		const acceptedCenters: number[] = [];
-
-		let addedCount = 0;
-
-		sortedCandidates.forEach((candidate) => {
-			const tooCloseToAccepted = acceptedCenters.some(
-				(center) => Math.abs(center - candidate.centerTimeMs) < SUGGESTION_SPACING_MS,
-			);
-
-			if (tooCloseToAccepted) {
-				return;
-			}
-
-			const centeredStart = Math.round(candidate.centerTimeMs - defaultDuration / 2);
-			const candidateStart = Math.max(0, Math.min(centeredStart, totalMs - defaultDuration));
-			const candidateEnd = candidateStart + defaultDuration;
-			const hasOverlap = reservedSpans.some(
-				(span) => candidateEnd > span.start && candidateStart < span.end,
-			);
-
-			if (hasOverlap) {
-				return;
-			}
-
-			reservedSpans.push({ start: candidateStart, end: candidateEnd });
-			acceptedCenters.push(candidate.centerTimeMs);
-			onZoomSuggested({ start: candidateStart, end: candidateEnd }, candidate.focus);
-			addedCount += 1;
-		});
-
-		if (addedCount === 0) {
+		if (result.type === "no_slots_available") {
 			toast.info("No auto-zoom slots available", {
-				description: "Detected dwell points overlap existing zoom regions.",
+				description: "Detected dwell points overlap existing zoom or trim regions.",
 			});
 			return;
 		}
 
+		if (result.type !== "ok") {
+			return;
+		}
+
+		result.suggestions.forEach((suggestion) => {
+			onZoomSuggested({ start: suggestion.start, end: suggestion.end }, suggestion.focus);
+		});
+
+		const addedCount = result.suggestions.length;
 		toast.success(`Added ${addedCount} cursor-based zoom suggestion${addedCount === 1 ? "" : "s"}`);
 	}, [
 		videoDuration,
 		totalMs,
 		defaultRegionDurationMs,
 		zoomRegions,
+		trimRegions,
 		onZoomSuggested,
 		cursorTelemetry,
 	]);
@@ -1144,7 +1070,6 @@ export default function TimelineEditor({
 	return (
 		<div className="flex-1 flex flex-col bg-cc-surface-0 overflow-hidden">
 			<div className="flex items-center gap-2 px-4 py-2 border-b border-white/5 bg-cc-surface-0">
-
 				{/* Center group: Timeline actions */}
 				<div className="flex items-center gap-1">
 					<Button
