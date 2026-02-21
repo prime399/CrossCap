@@ -310,31 +310,46 @@ export function SettingsPanel({
 	}
 
 	return (
-		<div className="flex-[2] min-w-0 bg-cc-surface-0/80 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col shadow-2xl shadow-black/50 h-full overflow-hidden">
-			<div className="flex-1 overflow-y-auto custom-scrollbar p-3 pb-0">
+		<div className="flex h-full min-w-0 flex-[2] flex-col overflow-hidden rounded-2xl border border-[hsl(var(--cc-border-strong))]/75 bg-gradient-to-b from-[#0f141d] via-[#0c1119] to-[#090d13] shadow-[0_20px_48px_rgba(2,8,23,0.55)] backdrop-blur-xl">
+			<div className="custom-scrollbar flex-1 overflow-y-auto p-3.5 pb-0">
 				<Tabs value={activeSettingsTab} onValueChange={setActiveSettingsTab} className="w-full">
-					<TabsList className="mb-3 w-full grid grid-cols-4 h-9 rounded-xl p-1">
-						<TabsTrigger value="effects" className="gap-1.5 text-[11px]">
+					<TabsList className="mb-3.5 grid h-10 w-full grid-cols-4 rounded-xl border border-white/10 bg-black/30 p-1">
+						<TabsTrigger
+							value="effects"
+							className="gap-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 active:scale-[0.98]"
+						>
 							<Sparkle size={14} weight="duotone" />
 							Effects
 						</TabsTrigger>
-						<TabsTrigger value="background" className="gap-1.5 text-[11px]">
+						<TabsTrigger
+							value="background"
+							className="gap-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 active:scale-[0.98]"
+						>
 							<Palette size={14} weight="duotone" />
 							Background
 						</TabsTrigger>
-						<TabsTrigger value="zoom" className="gap-1.5 text-[11px]">
+						<TabsTrigger
+							value="zoom"
+							className="gap-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 active:scale-[0.98]"
+						>
 							<MagnifyingGlass size={14} weight="duotone" />
 							Zoom
 						</TabsTrigger>
-						<TabsTrigger value="cursor" className="gap-1.5 text-[11px]">
+						<TabsTrigger
+							value="cursor"
+							className="gap-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200 active:scale-[0.98]"
+						>
 							<Cursor size={14} weight="duotone" />
 							Cursor
 						</TabsTrigger>
 					</TabsList>
 
-					<TabsContent value="effects" className="mt-0 space-y-2">
+					<TabsContent
+						value="effects"
+						className="mt-0 space-y-2.5 animate-in fade-in-50 slide-in-from-bottom-1 duration-200"
+					>
 						<div className="grid grid-cols-2 gap-2">
-							<div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5 border border-white/5">
+							<div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2">
 								<div className="text-[11px] font-medium text-slate-300">Motion Blur</div>
 								<Switch
 									checked={motionBlurEnabled}
@@ -342,7 +357,7 @@ export function SettingsPanel({
 									className="data-[state=checked]:bg-cc-accent scale-90"
 								/>
 							</div>
-							<div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5 border border-white/5">
+							<div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2">
 								<div className="text-[11px] font-medium text-slate-300">Blur BG</div>
 								<Switch
 									checked={showBlur}
@@ -353,7 +368,7 @@ export function SettingsPanel({
 						</div>
 
 						<div className="grid grid-cols-2 gap-2">
-							<div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
+							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
 								<div className="flex items-center justify-between mb-1.5">
 									<div className="text-[11px] font-medium text-slate-300">Shadow</div>
 									<span className="text-[10px] text-slate-500 font-mono">
@@ -369,7 +384,7 @@ export function SettingsPanel({
 									className="w-full [&_[role=slider]]:bg-cc-accent [&_[role=slider]]:border-cc-accent [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
 								/>
 							</div>
-							<div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
+							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
 								<div className="flex items-center justify-between mb-1.5">
 									<div className="text-[11px] font-medium text-slate-300">Roundness</div>
 									<span className="text-[10px] text-slate-500 font-mono">{borderRadius}px</span>
@@ -385,7 +400,7 @@ export function SettingsPanel({
 							</div>
 						</div>
 
-						<div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
+						<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
 							<div className="flex items-center justify-between mb-1.5">
 								<div className="text-[11px] font-medium text-slate-300">Padding</div>
 								<span className="text-[10px] text-slate-500 font-mono">{padding}%</span>
@@ -401,7 +416,10 @@ export function SettingsPanel({
 						</div>
 					</TabsContent>
 
-					<TabsContent value="background" className="mt-0">
+					<TabsContent
+						value="background"
+						className="mt-0 animate-in fade-in-50 slide-in-from-bottom-1 duration-200"
+					>
 						<Tabs
 							value={activeBackgroundTab}
 							onValueChange={(value) =>
@@ -409,16 +427,25 @@ export function SettingsPanel({
 							}
 							className="w-full"
 						>
-							<TabsList className="mb-3 w-full grid grid-cols-3 h-8 rounded-xl p-1">
-								<TabsTrigger value="image" className="gap-1.5 text-[11px]">
+							<TabsList className="mb-3 grid h-9 w-full grid-cols-3 rounded-xl border border-white/10 bg-black/30 p-1">
+								<TabsTrigger
+									value="image"
+									className="gap-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 active:scale-[0.98]"
+								>
 									<Image size={14} />
 									Image
 								</TabsTrigger>
-								<TabsTrigger value="color" className="gap-1.5 text-[11px]">
+								<TabsTrigger
+									value="color"
+									className="gap-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 active:scale-[0.98]"
+								>
 									<Palette size={14} weight="duotone" />
 									Color
 								</TabsTrigger>
-								<TabsTrigger value="gradient" className="gap-1.5 text-[11px]">
+								<TabsTrigger
+									value="gradient"
+									className="gap-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 active:scale-[0.98]"
+								>
 									<Sparkle size={14} weight="duotone" />
 									Gradient
 								</TabsTrigger>
@@ -436,7 +463,7 @@ export function SettingsPanel({
 									<Button
 										onClick={() => fileInputRef.current?.click()}
 										variant="outline"
-										className="w-full gap-2 bg-white/5 text-slate-200 border-white/10 hover:bg-cc-accent hover:text-white hover:border-cc-accent transition-all h-8 text-[11px]"
+										className="h-8 w-full gap-2 border-white/10 bg-white/[0.04] text-[11px] text-slate-200 transition-all duration-200 hover:border-cc-accent/60 hover:bg-cc-accent hover:text-white active:scale-[0.98]"
 									>
 										<UploadSimple size={14} />
 										Upload Custom
@@ -449,7 +476,7 @@ export function SettingsPanel({
 												<div
 													key={`custom-${idx}`}
 													className={cn(
-														"aspect-square w-9 h-9 rounded-md border-2 overflow-hidden cursor-pointer transition-all duration-200 relative group shadow-sm",
+														"group relative h-9 w-9 cursor-pointer overflow-hidden rounded-md border-2 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95",
 														isSelected
 															? "border-cc-accent ring-1 ring-cc-accent/30"
 															: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
@@ -493,7 +520,7 @@ export function SettingsPanel({
 												<div
 													key={path}
 													className={cn(
-														"aspect-square w-9 h-9 rounded-md border-2 overflow-hidden cursor-pointer transition-all duration-200 shadow-sm",
+														"aspect-square h-9 w-9 cursor-pointer overflow-hidden rounded-md border-2 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95",
 														isSelected
 															? "border-cc-accent ring-1 ring-cc-accent/30"
 															: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
@@ -534,7 +561,7 @@ export function SettingsPanel({
 											<div
 												key={g}
 												className={cn(
-													"aspect-square w-9 h-9 rounded-md border-2 overflow-hidden cursor-pointer transition-all duration-200 shadow-sm",
+													"aspect-square h-9 w-9 cursor-pointer overflow-hidden rounded-md border-2 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95",
 													gradient === g
 														? "border-cc-accent ring-1 ring-cc-accent/30"
 														: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
@@ -554,7 +581,10 @@ export function SettingsPanel({
 						</Tabs>
 					</TabsContent>
 
-					<TabsContent value="zoom" className="mt-0 space-y-3">
+					<TabsContent
+						value="zoom"
+						className="mt-0 space-y-3 animate-in fade-in-50 slide-in-from-bottom-1 duration-200"
+					>
 						<div className="flex items-center justify-between">
 							<span className="text-[11px] font-medium text-slate-200">Zoom Level</span>
 							<div className="flex items-center gap-2">
@@ -576,7 +606,7 @@ export function SettingsPanel({
 										disabled={!zoomEnabled}
 										onClick={() => onZoomDepthChange?.(option.depth)}
 										className={cn(
-											"h-auto w-full rounded-lg border px-1 py-2 text-center shadow-sm transition-all",
+											"h-auto w-full rounded-lg border px-1 py-2 text-center shadow-sm transition-all active:scale-[0.98]",
 											"duration-200 ease-out",
 											zoomEnabled ? "opacity-100 cursor-pointer" : "opacity-40 cursor-not-allowed",
 											isActive
@@ -599,7 +629,7 @@ export function SettingsPanel({
 								onClick={handleDeleteClick}
 								variant="destructive"
 								size="sm"
-								className="w-full gap-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30 transition-all h-8 text-xs"
+								className="h-8 w-full gap-2 border border-red-500/20 bg-red-500/10 text-xs text-red-400 transition-all duration-200 hover:border-red-500/30 hover:bg-red-500/20 active:scale-[0.98]"
 							>
 								<Trash size={12} />
 								Delete Zoom
@@ -610,7 +640,7 @@ export function SettingsPanel({
 								onClick={handleTrimDeleteClick}
 								variant="destructive"
 								size="sm"
-								className="w-full gap-2 bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/30 transition-all h-8 text-xs"
+								className="h-8 w-full gap-2 border border-red-500/20 bg-red-500/10 text-xs text-red-400 transition-all duration-200 hover:border-red-500/30 hover:bg-red-500/20 active:scale-[0.98]"
 							>
 								<Trash size={12} />
 								Delete Trim Region
@@ -618,7 +648,10 @@ export function SettingsPanel({
 						)}
 					</TabsContent>
 
-					<TabsContent value="cursor" className="mt-0">
+					<TabsContent
+						value="cursor"
+						className="mt-0 animate-in fade-in-50 slide-in-from-bottom-1 duration-200"
+					>
 						<CursorSettingsPanel
 							cursorEnabled={cursorEnabled}
 							onCursorEnabledChange={onCursorEnabledChange}
@@ -683,12 +716,12 @@ export function SettingsPanel({
 					document.body,
 				)}
 
-			<div className="flex-shrink-0 p-4 pt-3 border-t border-white/[0.06] bg-black/20">
-				<div className="flex items-center gap-2 mb-3">
+			<div className="flex-shrink-0 border-t border-white/10 bg-black/20 p-4 pt-3">
+				<div className="mb-3 flex items-center gap-2">
 					<button
 						onClick={() => onExportFormatChange?.("mp4")}
 						className={cn(
-							"flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border transition-all text-xs font-medium",
+							"flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-all duration-200 active:scale-[0.98]",
 							exportFormat === "mp4"
 								? "bg-cc-accent/10 border-cc-accent/50 text-white"
 								: "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200",
@@ -700,7 +733,7 @@ export function SettingsPanel({
 					<button
 						onClick={() => onExportFormatChange?.("gif")}
 						className={cn(
-							"flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border transition-all text-xs font-medium",
+							"flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-all duration-200 active:scale-[0.98]",
 							exportFormat === "gif"
 								? "bg-cc-accent/10 border-cc-accent/50 text-white"
 								: "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200",
@@ -716,7 +749,7 @@ export function SettingsPanel({
 						<button
 							onClick={() => onExportQualityChange?.("medium")}
 							className={cn(
-								"rounded-md transition-all text-[10px] font-medium",
+								"rounded-md text-[10px] font-medium transition-all duration-200 active:scale-[0.98]",
 								exportQuality === "medium"
 									? "bg-white text-black"
 									: "text-slate-400 hover:text-slate-200",
@@ -727,7 +760,7 @@ export function SettingsPanel({
 						<button
 							onClick={() => onExportQualityChange?.("good")}
 							className={cn(
-								"rounded-md transition-all text-[10px] font-medium",
+								"rounded-md text-[10px] font-medium transition-all duration-200 active:scale-[0.98]",
 								exportQuality === "good"
 									? "bg-white text-black"
 									: "text-slate-400 hover:text-slate-200",
@@ -738,7 +771,7 @@ export function SettingsPanel({
 						<button
 							onClick={() => onExportQualityChange?.("source")}
 							className={cn(
-								"rounded-md transition-all text-[10px] font-medium",
+								"rounded-md text-[10px] font-medium transition-all duration-200 active:scale-[0.98]",
 								exportQuality === "source"
 									? "bg-white text-black"
 									: "text-slate-400 hover:text-slate-200",
@@ -758,7 +791,7 @@ export function SettingsPanel({
 										key={rate.value}
 										onClick={() => onGifFrameRateChange?.(rate.value)}
 										className={cn(
-											"rounded-md transition-all text-[10px] font-medium",
+											"rounded-md text-[10px] font-medium transition-all duration-200 active:scale-[0.98]",
 											gifFrameRate === rate.value
 												? "bg-white text-black"
 												: "text-slate-400 hover:text-slate-200",
@@ -774,7 +807,7 @@ export function SettingsPanel({
 										key={key}
 										onClick={() => onGifSizePresetChange?.(key as GifSizePreset)}
 										className={cn(
-											"rounded-md transition-all text-[10px] font-medium",
+											"rounded-md text-[10px] font-medium transition-all duration-200 active:scale-[0.98]",
 											gifSizePreset === key
 												? "bg-white text-black"
 												: "text-slate-400 hover:text-slate-200",
@@ -806,7 +839,7 @@ export function SettingsPanel({
 						type="button"
 						variant="outline"
 						onClick={onLoadProject}
-						className="h-8 text-[10px] font-medium gap-1.5 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
+						className="h-8 gap-1.5 border-white/10 bg-white/5 text-[10px] font-medium text-slate-300 transition-all duration-200 hover:bg-white/10 active:scale-[0.98]"
 					>
 						<FolderOpen size={14} />
 						Load Project
@@ -815,7 +848,7 @@ export function SettingsPanel({
 						type="button"
 						variant="outline"
 						onClick={onSaveProject}
-						className="h-8 text-[10px] font-medium gap-1.5 bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
+						className="h-8 gap-1.5 border-white/10 bg-white/5 text-[10px] font-medium text-slate-300 transition-all duration-200 hover:bg-white/10 active:scale-[0.98]"
 					>
 						<FloppyDisk size={14} />
 						Save Project
@@ -826,13 +859,13 @@ export function SettingsPanel({
 					type="button"
 					size="lg"
 					onClick={onExport}
-					className="w-full py-5 text-sm font-semibold flex items-center justify-center gap-2 bg-cc-accent text-white rounded-xl shadow-lg shadow-cc-accent/20 hover:bg-cc-accent/90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+					className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 py-5 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition-all duration-200 hover:brightness-110 hover:scale-[1.01] active:scale-[0.98]"
 				>
 					<DownloadSimple size={16} weight="bold" />
 					Export {exportFormat === "gif" ? "GIF" : "Video"}
 				</Button>
 
-				<div className="flex gap-2 mt-3">
+				<div className="mt-3 flex gap-2">
 					<button
 						type="button"
 						onClick={() => {
@@ -840,7 +873,7 @@ export function SettingsPanel({
 								"https://github.com/prime399/CrossCap/issues/new/choose",
 							);
 						}}
-						className="flex-1 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 hover:text-slate-300 py-1.5 transition-colors"
+						className="flex flex-1 items-center justify-center gap-1.5 py-1.5 text-[10px] text-slate-500 transition-all duration-200 hover:text-slate-300 active:scale-[0.98]"
 					>
 						<Bug size={12} className="text-cc-accent" />
 						Report Bug
@@ -850,7 +883,7 @@ export function SettingsPanel({
 						onClick={() => {
 							window.electronAPI?.openExternalUrl("https://github.com/prime399/CrossCap");
 						}}
-						className="flex-1 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 hover:text-slate-300 py-1.5 transition-colors"
+						className="flex flex-1 items-center justify-center gap-1.5 py-1.5 text-[10px] text-slate-500 transition-all duration-200 hover:text-slate-300 active:scale-[0.98]"
 					>
 						<Star size={12} weight="fill" className="text-yellow-400" />
 						Star on GitHub
