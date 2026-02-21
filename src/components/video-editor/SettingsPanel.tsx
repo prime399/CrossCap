@@ -1,8 +1,8 @@
 import {
 	Bug,
 	Cursor,
-	DownloadSimple,
-	FilmStrip,
+	DotsThree,
+	Export,
 	FloppyDisk,
 	FolderOpen,
 	Image,
@@ -19,14 +19,19 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GRADIENTS } from "@/constants/gradients";
 import { WALLPAPER_RELATIVE } from "@/constants/wallpapers";
 import { getAssetPath } from "@/lib/assetPath";
-import type { ExportFormat, ExportQuality, GifFrameRate, GifSizePreset } from "@/lib/exporter";
-import { GIF_FRAME_RATES, GIF_SIZE_PRESETS } from "@/lib/exporter";
 import { cn } from "@/lib/utils";
 import { type AspectRatio } from "@/utils/aspectRatioUtils";
 import { AnnotationSettingsPanel } from "./AnnotationSettingsPanel";
@@ -81,21 +86,9 @@ interface SettingsPanelProps {
 	onCropChange?: (region: CropRegion) => void;
 	aspectRatio: AspectRatio;
 	videoElement?: HTMLVideoElement | null;
-	exportQuality?: ExportQuality;
-	onExportQualityChange?: (quality: ExportQuality) => void;
-	// Export format settings
-	exportFormat?: ExportFormat;
-	onExportFormatChange?: (format: ExportFormat) => void;
-	gifFrameRate?: GifFrameRate;
-	onGifFrameRateChange?: (rate: GifFrameRate) => void;
-	gifLoop?: boolean;
-	onGifLoopChange?: (loop: boolean) => void;
-	gifSizePreset?: GifSizePreset;
-	onGifSizePresetChange?: (preset: GifSizePreset) => void;
-	gifOutputDimensions?: { width: number; height: number };
 	onSaveProject?: () => void;
 	onLoadProject?: () => void;
-	onExport?: () => void;
+	onOpenExportPage?: () => void;
 	selectedAnnotationId?: string | null;
 	annotationRegions?: AnnotationRegion[];
 	onAnnotationContentChange?: (id: string, content: string) => void;
@@ -123,18 +116,18 @@ interface SettingsPanelProps {
 }
 
 const ZOOM_DEPTH_OPTIONS: Array<{ depth: ZoomDepth; label: string }> = [
-	{ depth: 1, label: "1.25×" },
-	{ depth: 2, label: "1.5×" },
-	{ depth: 3, label: "1.8×" },
-	{ depth: 4, label: "2.2×" },
-	{ depth: 5, label: "3.5×" },
-	{ depth: 6, label: "5×" },
+	{ depth: 1, label: "1.25x" },
+	{ depth: 2, label: "1.5x" },
+	{ depth: 3, label: "1.8x" },
+	{ depth: 4, label: "2.2x" },
+	{ depth: 5, label: "3.5x" },
+	{ depth: 6, label: "5x" },
 ];
 
 const SETTINGS_TAB_LABELS: Record<string, string> = {
 	effects: "Effects",
-	background: "Background Image",
-	zoom: "Zoom Controls",
+	background: "Background",
+	zoom: "Zoom",
 	cursor: "Cursor",
 };
 
@@ -155,7 +148,7 @@ export function SettingsPanel({
 	onShadowOpacityChange,
 	shadowBlur = 0.45,
 	onShadowBlurChange,
-	showBlur,
+	showBlur = false,
 	onBlurChange,
 	motionBlurEnabled = false,
 	onMotionBlurChange,
@@ -177,20 +170,9 @@ export function SettingsPanel({
 	onCropChange,
 	aspectRatio,
 	videoElement,
-	exportQuality = "good",
-	onExportQualityChange,
-	exportFormat = "mp4",
-	onExportFormatChange,
-	gifFrameRate = 15,
-	onGifFrameRateChange,
-	gifLoop = true,
-	onGifLoopChange,
-	gifSizePreset = "medium",
-	onGifSizePresetChange,
-	gifOutputDimensions = { width: 1280, height: 720 },
 	onSaveProject,
 	onLoadProject,
-	onExport,
+	onOpenExportPage,
 	selectedAnnotationId,
 	annotationRegions = [],
 	onAnnotationContentChange,
@@ -217,6 +199,9 @@ export function SettingsPanel({
 	onShowCropModal,
 }: SettingsPanelProps) {
 	const [wallpaperPaths, setWallpaperPaths] = useState<string[]>([]);
+	const [activeSettingsTab, setActiveSettingsTab] = useState<string>("effects");
+	const [selectedColor, setSelectedColor] = useState("#ADADAD");
+	const [gradient, setGradient] = useState<string>(GRADIENTS[0]);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -233,6 +218,7 @@ export function SettingsPanel({
 			mounted = false;
 		};
 	}, []);
+
 	const colorPalette = [
 		"#FF0000",
 		"#FFD700",
@@ -252,80 +238,14 @@ export function SettingsPanel({
 		"#795548",
 	];
 
-	const [selectedColor, setSelectedColor] = useState("#ADADAD");
-	const [gradient, setGradient] = useState<string>(GRADIENTS[0]);
-
-	const [activeSettingsTab, setActiveSettingsTab] = useState<string>("effects");
 	const activeTabLabel = SETTINGS_TAB_LABELS[activeSettingsTab] ?? "Settings";
-
 	const zoomEnabled = Boolean(selectedZoomDepth);
 	const trimEnabled = Boolean(selectedTrimId);
 
-	const handleDeleteClick = () => {
-		if (selectedZoomId && onZoomDelete) {
-			onZoomDelete(selectedZoomId);
-		}
-	};
-
-	const handleTrimDeleteClick = () => {
-		if (selectedTrimId && onTrimDelete) {
-			onTrimDelete(selectedTrimId);
-		}
-	};
-
-	const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const files = event.target.files;
-		if (!files || files.length === 0) return;
-
-		const file = files[0];
-
-		// Validate file type - only allow JPG/JPEG
-		const validTypes = ["image/jpeg", "image/jpg"];
-		if (!validTypes.includes(file.type)) {
-			toast.error("Invalid file type", {
-				description: "Please upload a JPG or JPEG image file.",
-			});
-			event.target.value = "";
-			return;
-		}
-
-		const reader = new FileReader();
-
-		reader.onload = (e) => {
-			const dataUrl = e.target?.result as string;
-			if (dataUrl) {
-				onCustomImageAdd?.(dataUrl);
-				onWallpaperChange(dataUrl);
-				toast.success("Custom image uploaded successfully!");
-			}
-		};
-
-		reader.onerror = () => {
-			toast.error("Failed to upload image", {
-				description: "There was an error reading the file.",
-			});
-		};
-
-		reader.readAsDataURL(file);
-		// Reset input so the same file can be selected again
-		event.target.value = "";
-	};
-
-	const handleRemoveCustomImage = (imageUrl: string, event: React.MouseEvent) => {
-		event.stopPropagation();
-		onCustomImageRemove?.(imageUrl);
-		// If the removed image was selected, clear selection
-		if (selected === imageUrl) {
-			onWallpaperChange(wallpaperPaths[0] || WALLPAPER_RELATIVE[0]);
-		}
-	};
-
-	// Find selected annotation
 	const selectedAnnotation = selectedAnnotationId
 		? annotationRegions.find((a) => a.id === selectedAnnotationId)
 		: null;
 
-	// If an annotation is selected, show annotation settings instead
 	if (
 		selectedAnnotation &&
 		onAnnotationContentChange &&
@@ -349,9 +269,39 @@ export function SettingsPanel({
 		);
 	}
 
+	const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+		const files = event.target.files;
+		if (!files || files.length === 0) return;
+
+		const file = files[0];
+		if (!["image/jpeg", "image/jpg"].includes(file.type)) {
+			toast.error("Invalid file type", {
+				description: "Please upload a JPG or JPEG image file.",
+			});
+			event.target.value = "";
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const dataUrl = e.target?.result as string;
+			if (!dataUrl) return;
+			onCustomImageAdd?.(dataUrl);
+			onWallpaperChange(dataUrl);
+			toast.success("Custom image uploaded successfully");
+		};
+		reader.onerror = () => {
+			toast.error("Failed to upload image", {
+				description: "There was an error reading the file.",
+			});
+		};
+		reader.readAsDataURL(file);
+		event.target.value = "";
+	};
+
 	return (
-		<div className="flex h-full min-h-0 min-w-0 flex-[2] flex-col overflow-hidden rounded-2xl border border-[hsl(var(--cc-border-strong))]/75 bg-gradient-to-b from-[#0f141d] via-[#0c1119] to-[#090d13] shadow-[0_20px_48px_rgba(2,8,23,0.55)] backdrop-blur-xl">
-			<div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-3.5 pb-0">
+		<div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-2xl border border-[hsl(var(--cc-border-strong))]/75 bg-gradient-to-b from-[#0f141d] via-[#0c1119] to-[#090d13] shadow-[0_20px_48px_rgba(2,8,23,0.55)] backdrop-blur-xl">
+			<div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-3.5 pb-3">
 				<Tabs value={activeSettingsTab} onValueChange={setActiveSettingsTab} className="w-full">
 					<div className="custom-scrollbar mb-3.5 overflow-x-auto">
 						<TabsList className="inline-flex h-11 min-w-full rounded-xl border border-white/10 bg-black/35 p-1">
@@ -389,8 +339,59 @@ export function SettingsPanel({
 							</TabsTrigger>
 						</TabsList>
 					</div>
-					<div className="mb-3 border-b border-white/10 pb-2">
+
+					<div className="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
 						<p className="text-sm font-semibold text-slate-100">{activeTabLabel}</p>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									className="h-7 w-7 rounded-md border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white"
+								>
+									<DotsThree size={16} weight="bold" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="w-48 border-white/10 bg-cc-popover text-slate-200"
+							>
+								<DropdownMenuItem onClick={onLoadProject} className="cursor-pointer text-xs">
+									<FolderOpen size={14} />
+									Load Project
+								</DropdownMenuItem>
+								<DropdownMenuItem onClick={onSaveProject} className="cursor-pointer text-xs">
+									<FloppyDisk size={14} />
+									Save Project
+								</DropdownMenuItem>
+								<DropdownMenuItem onClick={onOpenExportPage} className="cursor-pointer text-xs">
+									<Export size={14} />
+									Open Export Page
+								</DropdownMenuItem>
+								<DropdownMenuSeparator className="bg-white/10" />
+								<DropdownMenuItem
+									onClick={() =>
+										window.electronAPI?.openExternalUrl(
+											"https://github.com/prime399/CrossCap/issues/new/choose",
+										)
+									}
+									className="cursor-pointer text-xs"
+								>
+									<Bug size={14} />
+									Report Bug
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() =>
+										window.electronAPI?.openExternalUrl("https://github.com/prime399/CrossCap")
+									}
+									className="cursor-pointer text-xs"
+								>
+									<Star size={14} weight="fill" className="text-yellow-400" />
+									Star on GitHub
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
 					</div>
 
 					<TabsContent
@@ -446,22 +447,22 @@ export function SettingsPanel({
 
 						<div className="space-y-2">
 							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
-								<div className="flex items-center justify-between mb-1.5">
+								<div className="mb-1.5 flex items-center justify-between">
 									<div className="text-[11px] font-semibold text-slate-200">Motion Blur</div>
 									<Switch
 										checked={motionBlurEnabled}
 										onCheckedChange={onMotionBlurChange}
-										className="data-[state=checked]:bg-cc-accent scale-90"
+										className="scale-90 data-[state=checked]:bg-cc-accent"
 									/>
 								</div>
 							</div>
 							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
-								<div className="flex items-center justify-between mb-1.5">
+								<div className="mb-1.5 flex items-center justify-between">
 									<div className="text-[11px] font-semibold text-slate-200">Border</div>
 									<Switch
 										checked={borderEnabled}
 										onCheckedChange={onBorderEnabledChange}
-										className="data-[state=checked]:bg-cc-accent scale-90"
+										className="scale-90 data-[state=checked]:bg-cc-accent"
 									/>
 								</div>
 								{borderEnabled && (
@@ -521,9 +522,9 @@ export function SettingsPanel({
 								)}
 							</div>
 							<div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
-								<div className="flex items-center justify-between mb-1.5">
+								<div className="mb-1.5 flex items-center justify-between">
 									<div className="text-[11px] font-semibold text-slate-200">Shadow</div>
-									<span className="text-[10px] text-slate-500 font-mono">
+									<span className="font-mono text-[10px] text-slate-500">
 										{Math.round(shadowIntensity * 100)}%
 									</span>
 								</div>
@@ -594,7 +595,7 @@ export function SettingsPanel({
 										<Switch
 											checked={showBlur}
 											onCheckedChange={onBlurChange}
-											className="data-[state=checked]:bg-cc-accent scale-90"
+											className="scale-90 data-[state=checked]:bg-cc-accent"
 										/>
 									</div>
 								</div>
@@ -639,7 +640,7 @@ export function SettingsPanel({
 								</TabsList>
 							</div>
 
-							<div className="max-h-[min(280px,35vh)] overflow-y-auto custom-scrollbar">
+							<div className="custom-scrollbar max-h-[min(280px,35vh)] overflow-y-auto">
 								<TabsContent value="image" className="mt-0 space-y-2">
 									<input
 										type="file"
@@ -656,7 +657,6 @@ export function SettingsPanel({
 										<UploadSimple size={14} />
 										Upload Custom
 									</Button>
-
 									<div className="grid grid-cols-5 gap-2">
 										{customImages.map((imageUrl, idx) => {
 											const isSelected = selected === imageUrl;
@@ -667,7 +667,7 @@ export function SettingsPanel({
 														"group relative h-10 w-full cursor-pointer overflow-hidden rounded-md border shadow-sm transition-all duration-200 hover:scale-[1.03] active:scale-95",
 														isSelected
 															? "border-cc-accent ring-1 ring-cc-accent/30"
-															: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
+															: "border-white/10 bg-white/5 opacity-80 hover:border-cc-accent/40 hover:opacity-100",
 													)}
 													style={{
 														backgroundImage: `url(${imageUrl})`,
@@ -678,8 +678,13 @@ export function SettingsPanel({
 													role="button"
 												>
 													<button
-														onClick={(e) => handleRemoveCustomImage(imageUrl, e)}
-														className="absolute top-0.5 right-0.5 w-3 h-3 bg-red-500/90 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+														onClick={(e) => {
+															e.stopPropagation();
+															onCustomImageRemove?.(imageUrl);
+															if (selected === imageUrl)
+																onWallpaperChange(wallpaperPaths[0] || WALLPAPER_RELATIVE[0]);
+														}}
+														className="absolute right-0.5 top-0.5 z-10 flex h-3 w-3 items-center justify-center rounded-full bg-red-500/90 opacity-0 transition-opacity hover:bg-red-500 group-hover:opacity-100"
 													>
 														<X size={8} weight="bold" className="text-white" />
 													</button>
@@ -691,27 +696,17 @@ export function SettingsPanel({
 											? wallpaperPaths
 											: WALLPAPER_RELATIVE.map((p) => `/${p}`)
 										).map((path) => {
-											const isSelected = (() => {
-												if (!selected) return false;
-												if (selected === path) return true;
-												try {
-													const clean = (s: string) =>
-														s.replace(/^file:\/\//, "").replace(/^\//, "");
-													if (clean(selected).endsWith(clean(path))) return true;
-													if (clean(path).endsWith(clean(selected))) return true;
-												} catch {
-													// path comparison failed, treat as non-match
-												}
-												return false;
-											})();
+											const isSelected =
+												selected === path ||
+												selected.replace(/^file:\/\//, "").endsWith(path.replace(/^\//, ""));
 											return (
 												<div
 													key={path}
 													className={cn(
-														"aspect-square h-10 w-full cursor-pointer overflow-hidden rounded-md border shadow-sm transition-all duration-200 hover:scale-[1.03] active:scale-95",
+														"h-10 w-full cursor-pointer overflow-hidden rounded-md border shadow-sm transition-all duration-200 hover:scale-[1.03] active:scale-95",
 														isSelected
 															? "border-cc-accent ring-1 ring-cc-accent/30"
-															: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
+															: "border-white/10 bg-white/5 opacity-80 hover:border-cc-accent/40 hover:opacity-100",
 													)}
 													style={{
 														backgroundImage: `url(${path})`,
@@ -735,10 +730,7 @@ export function SettingsPanel({
 												setSelectedColor(color.hex);
 												onWallpaperChange(color.hex);
 											}}
-											style={{
-												width: "100%",
-												borderRadius: "8px",
-											}}
+											style={{ width: "100%", borderRadius: "8px" }}
 										/>
 									</div>
 								</TabsContent>
@@ -749,10 +741,10 @@ export function SettingsPanel({
 											<div
 												key={g}
 												className={cn(
-													"aspect-square h-10 w-full cursor-pointer overflow-hidden rounded-md border shadow-sm transition-all duration-200 hover:scale-[1.03] active:scale-95",
+													"h-10 w-full cursor-pointer overflow-hidden rounded-md border shadow-sm transition-all duration-200 hover:scale-[1.03] active:scale-95",
 													gradient === g
 														? "border-cc-accent ring-1 ring-cc-accent/30"
-														: "border-white/10 hover:border-cc-accent/40 opacity-80 hover:opacity-100 bg-white/5",
+														: "border-white/10 bg-white/5 opacity-80 hover:border-cc-accent/40 hover:opacity-100",
 												)}
 												style={{ background: g }}
 												aria-label={`Gradient ${idx + 1}`}
@@ -777,7 +769,7 @@ export function SettingsPanel({
 							<span className="text-[11px] font-medium text-slate-200">Zoom Level</span>
 							<div className="flex items-center gap-2">
 								{zoomEnabled && selectedZoomDepth && (
-									<span className="text-[10px] uppercase tracking-wider font-medium text-cc-accent bg-cc-accent/10 px-2 py-0.5 rounded-full">
+									<span className="rounded-full bg-cc-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-cc-accent">
 										{ZOOM_DEPTH_OPTIONS.find((o) => o.depth === selectedZoomDepth)?.label}
 									</span>
 								)}
@@ -794,12 +786,11 @@ export function SettingsPanel({
 										disabled={!zoomEnabled}
 										onClick={() => onZoomDepthChange?.(option.depth)}
 										className={cn(
-											"h-auto w-full rounded-lg border px-1 py-2 text-center shadow-sm transition-all active:scale-[0.98]",
-											"duration-200 ease-out",
-											zoomEnabled ? "opacity-100 cursor-pointer" : "opacity-40 cursor-not-allowed",
+											"h-auto w-full rounded-lg border px-1 py-2 text-center shadow-sm transition-all duration-200 active:scale-[0.98]",
+											zoomEnabled ? "cursor-pointer opacity-100" : "cursor-not-allowed opacity-40",
 											isActive
 												? "border-cc-accent bg-cc-accent text-white shadow-cc-accent/20"
-												: "border-white/5 bg-white/5 text-slate-400 hover:bg-white/10 hover:border-white/10 hover:text-slate-200",
+												: "border-white/5 bg-white/5 text-slate-400 hover:border-white/10 hover:bg-white/10 hover:text-slate-200",
 										)}
 									>
 										<span className="text-xs font-semibold">{option.label}</span>
@@ -808,13 +799,13 @@ export function SettingsPanel({
 							})}
 						</div>
 						{!zoomEnabled && (
-							<p className="text-[10px] text-slate-500 text-center">
+							<p className="text-center text-[10px] text-slate-500">
 								Select a zoom region to adjust
 							</p>
 						)}
 						{zoomEnabled && (
 							<Button
-								onClick={handleDeleteClick}
+								onClick={() => selectedZoomId && onZoomDelete?.(selectedZoomId)}
 								variant="destructive"
 								size="sm"
 								className="h-8 w-full gap-2 border border-red-500/20 bg-red-500/10 text-xs text-red-400 transition-all duration-200 hover:border-red-500/30 hover:bg-red-500/20 active:scale-[0.98]"
@@ -825,7 +816,7 @@ export function SettingsPanel({
 						)}
 						{trimEnabled && (
 							<Button
-								onClick={handleTrimDeleteClick}
+								onClick={() => selectedTrimId && onTrimDelete?.(selectedTrimId)}
 								variant="destructive"
 								size="sm"
 								className="h-8 w-full gap-2 border border-red-500/20 bg-red-500/10 text-xs text-red-400 transition-all duration-200 hover:border-red-500/30 hover:bg-red-500/20 active:scale-[0.98]"
@@ -863,10 +854,10 @@ export function SettingsPanel({
 				createPortal(
 					<>
 						<div
-							className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-in fade-in duration-200"
+							className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
 							onClick={() => onShowCropModal?.(false)}
 						/>
-						<div className="fixed top-1/2 left-1/2 z-[60] w-[92vw] max-w-6xl max-h-[92vh] -translate-x-1/2 -translate-y-1/2 overflow-auto rounded-2xl border border-white/10 bg-[#0b0d12] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+						<div className="fixed left-1/2 top-1/2 z-[60] max-h-[92vh] w-[92vw] max-w-6xl -translate-x-1/2 -translate-y-1/2 overflow-auto rounded-2xl border border-white/10 bg-[#0b0d12] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
 							<div className="mb-3 flex items-center justify-between">
 								<div>
 									<span className="text-xl font-bold text-slate-200">Crop Video</span>
@@ -903,181 +894,6 @@ export function SettingsPanel({
 					</>,
 					document.body,
 				)}
-
-			<div className="flex-shrink-0 border-t border-white/10 bg-black/20 p-4 pt-3">
-				<div className="mb-3 flex items-center gap-2">
-					<button
-						onClick={() => onExportFormatChange?.("mp4")}
-						className={cn(
-							"flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-all duration-200 active:scale-[0.98]",
-							exportFormat === "mp4"
-								? "bg-cc-accent/10 border-cc-accent/50 text-white"
-								: "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200",
-						)}
-					>
-						<FilmStrip size={14} />
-						MP4
-					</button>
-					<button
-						onClick={() => onExportFormatChange?.("gif")}
-						className={cn(
-							"flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-all duration-200 active:scale-[0.98]",
-							exportFormat === "gif"
-								? "bg-cc-accent/10 border-cc-accent/50 text-white"
-								: "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200",
-						)}
-					>
-						<Image size={14} />
-						GIF
-					</button>
-				</div>
-
-				{exportFormat === "mp4" && (
-					<div className="mb-3 bg-white/5 border border-white/5 p-0.5 w-full grid grid-cols-3 h-7 rounded-lg">
-						<button
-							onClick={() => onExportQualityChange?.("medium")}
-							className={cn(
-								"rounded-md text-[10px] font-medium transition-all duration-200 active:scale-[0.98]",
-								exportQuality === "medium"
-									? "bg-white text-black"
-									: "text-slate-400 hover:text-slate-200",
-							)}
-						>
-							Low
-						</button>
-						<button
-							onClick={() => onExportQualityChange?.("good")}
-							className={cn(
-								"rounded-md text-[10px] font-medium transition-all duration-200 active:scale-[0.98]",
-								exportQuality === "good"
-									? "bg-white text-black"
-									: "text-slate-400 hover:text-slate-200",
-							)}
-						>
-							Medium
-						</button>
-						<button
-							onClick={() => onExportQualityChange?.("source")}
-							className={cn(
-								"rounded-md text-[10px] font-medium transition-all duration-200 active:scale-[0.98]",
-								exportQuality === "source"
-									? "bg-white text-black"
-									: "text-slate-400 hover:text-slate-200",
-							)}
-						>
-							High
-						</button>
-					</div>
-				)}
-
-				{exportFormat === "gif" && (
-					<div className="mb-3 space-y-2">
-						<div className="flex items-center gap-2">
-							<div className="flex-1 bg-white/5 border border-white/5 p-0.5 grid grid-cols-4 h-7 rounded-lg">
-								{GIF_FRAME_RATES.map((rate) => (
-									<button
-										key={rate.value}
-										onClick={() => onGifFrameRateChange?.(rate.value)}
-										className={cn(
-											"rounded-md text-[10px] font-medium transition-all duration-200 active:scale-[0.98]",
-											gifFrameRate === rate.value
-												? "bg-white text-black"
-												: "text-slate-400 hover:text-slate-200",
-										)}
-									>
-										{rate.value}
-									</button>
-								))}
-							</div>
-							<div className="flex-1 bg-white/5 border border-white/5 p-0.5 grid grid-cols-3 h-7 rounded-lg">
-								{Object.entries(GIF_SIZE_PRESETS).map(([key, _preset]) => (
-									<button
-										key={key}
-										onClick={() => onGifSizePresetChange?.(key as GifSizePreset)}
-										className={cn(
-											"rounded-md text-[10px] font-medium transition-all duration-200 active:scale-[0.98]",
-											gifSizePreset === key
-												? "bg-white text-black"
-												: "text-slate-400 hover:text-slate-200",
-										)}
-									>
-										{key === "original" ? "Orig" : key.charAt(0).toUpperCase() + key.slice(1, 3)}
-									</button>
-								))}
-							</div>
-						</div>
-						<div className="flex items-center justify-between">
-							<span className="text-[10px] text-slate-500">
-								{gifOutputDimensions.width} × {gifOutputDimensions.height}px
-							</span>
-							<div className="flex items-center gap-2">
-								<span className="text-[10px] text-slate-400">Loop</span>
-								<Switch
-									checked={gifLoop}
-									onCheckedChange={onGifLoopChange}
-									className="data-[state=checked]:bg-cc-accent scale-75"
-								/>
-							</div>
-						</div>
-					</div>
-				)}
-
-				<div className="grid grid-cols-2 gap-2 mb-2">
-					<Button
-						type="button"
-						variant="outline"
-						onClick={onLoadProject}
-						className="h-8 gap-1.5 border-white/10 bg-white/5 text-[10px] font-medium text-slate-300 transition-all duration-200 hover:bg-white/10 active:scale-[0.98]"
-					>
-						<FolderOpen size={14} />
-						Load Project
-					</Button>
-					<Button
-						type="button"
-						variant="outline"
-						onClick={onSaveProject}
-						className="h-8 gap-1.5 border-white/10 bg-white/5 text-[10px] font-medium text-slate-300 transition-all duration-200 hover:bg-white/10 active:scale-[0.98]"
-					>
-						<FloppyDisk size={14} />
-						Save Project
-					</Button>
-				</div>
-
-				<Button
-					type="button"
-					size="lg"
-					onClick={onExport}
-					className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 py-5 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition-all duration-200 hover:brightness-110 hover:scale-[1.01] active:scale-[0.98]"
-				>
-					<DownloadSimple size={16} weight="bold" />
-					Export {exportFormat === "gif" ? "GIF" : "Video"}
-				</Button>
-
-				<div className="mt-3 flex gap-2">
-					<button
-						type="button"
-						onClick={() => {
-							window.electronAPI?.openExternalUrl(
-								"https://github.com/prime399/CrossCap/issues/new/choose",
-							);
-						}}
-						className="flex flex-1 items-center justify-center gap-1.5 py-1.5 text-[10px] text-slate-500 transition-all duration-200 hover:text-slate-300 active:scale-[0.98]"
-					>
-						<Bug size={12} className="text-cc-accent" />
-						Report Bug
-					</button>
-					<button
-						type="button"
-						onClick={() => {
-							window.electronAPI?.openExternalUrl("https://github.com/prime399/CrossCap");
-						}}
-						className="flex flex-1 items-center justify-center gap-1.5 py-1.5 text-[10px] text-slate-500 transition-all duration-200 hover:text-slate-300 active:scale-[0.98]"
-					>
-						<Star size={12} weight="fill" className="text-yellow-400" />
-						Star on GitHub
-					</button>
-				</div>
-			</div>
 		</div>
 	);
 }

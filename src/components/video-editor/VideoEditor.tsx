@@ -23,6 +23,7 @@ import { parseProjectEditor, validateProjectData } from "@/schemas/project";
 import { useEditorStore } from "@/stores/editorStore";
 import { ASPECT_RATIOS, getAspectRatioLabel, getAspectRatioValue } from "@/utils/aspectRatioUtils";
 import { ExportDialog } from "./ExportDialog";
+import { ExportPage } from "./ExportPage";
 import PlaybackControls from "./PlaybackControls";
 import { SettingsPanel } from "./SettingsPanel";
 import TimelineEditor from "./timeline/TimelineEditor";
@@ -73,6 +74,7 @@ export default function VideoEditor() {
 	const aspectRatio = useEditorStore((s) => s.aspectRatio);
 
 	const [showCropModal, setShowCropModal] = useState(false);
+	const [activeView, setActiveView] = useState<"editor" | "export">("editor");
 
 	const wallpaper = useEditorStore((s) => s.background.value);
 	const shadowIntensity = useEditorStore((s) => s.effects.shadowIntensity);
@@ -731,6 +733,75 @@ export default function VideoEditor() {
 
 	const effectiveBorderRadius =
 		cornerStyle === "sharp" ? 0 : cornerStyle === "squircle" ? borderRadius * 1.45 : borderRadius;
+	const gifOutputDimensions = calculateOutputDimensions(
+		videoPlaybackRef.current?.video?.videoWidth || 1920,
+		videoPlaybackRef.current?.video?.videoHeight || 1080,
+		gifSizePreset,
+		GIF_SIZE_PRESETS,
+	);
+
+	if (activeView === "export") {
+		return (
+			<>
+				<ExportPage
+					onBack={() => setActiveView("editor")}
+					onSaveProject={handleSaveProject}
+					onExport={handleOpenExportDialog}
+					videoPlaybackRef={videoPlaybackRef}
+					videoPath={videoPath || ""}
+					currentTime={currentTime}
+					duration={duration}
+					isPlaying={isPlaying}
+					onTogglePlayPause={togglePlayPause}
+					onSeek={handleSeek}
+					onDurationChange={store.setDuration}
+					onTimeUpdate={store.setCurrentTime}
+					onPlayStateChange={store.setIsPlaying}
+					onError={store.setError}
+					aspectRatio={aspectRatio}
+					wallpaper={wallpaper}
+					zoomRegions={zoomRegions}
+					trimRegions={trimRegions}
+					annotationRegions={annotationRegions}
+					showShadow={shadowIntensity > 0}
+					shadowIntensity={shadowIntensity}
+					shadowSize={shadowSize}
+					shadowOpacity={shadowOpacity}
+					shadowBlur={shadowBlur}
+					showBlur={showBlur}
+					motionBlurEnabled={motionBlurEnabled}
+					borderRadius={effectiveBorderRadius}
+					borderEnabled={borderEnabled}
+					borderWidth={borderWidth}
+					borderColor={borderColor}
+					borderOpacity={borderOpacity}
+					padding={padding}
+					cropRegion={cropRegion}
+					exportFormat={exportFormat}
+					onExportFormatChange={setExportFormat}
+					exportQuality={exportQuality}
+					onExportQualityChange={setExportQuality}
+					gifFrameRate={gifFrameRate}
+					onGifFrameRateChange={setGifFrameRate}
+					gifLoop={gifLoop}
+					onGifLoopChange={setGifLoop}
+					gifSizePreset={gifSizePreset}
+					onGifSizePresetChange={setGifSizePreset}
+					gifOutputDimensions={gifOutputDimensions}
+				/>
+				<Toaster theme="dark" className="pointer-events-auto" />
+				<ExportDialog
+					isOpen={showExportDialog}
+					onClose={() => store.setShowExportDialog(false)}
+					progress={exportProgress}
+					isExporting={isExporting}
+					error={exportError}
+					onCancel={handleCancelExport}
+					exportFormat={exportFormat}
+				/>
+			</>
+		);
+	}
 
 	return (
 		<div className="flex h-screen flex-col overflow-hidden bg-cc-surface-0 text-[hsl(var(--cc-text-primary))] selection:bg-cc-accent/30">
@@ -932,23 +1003,6 @@ export default function VideoEditor() {
 										onCropChange={setCropRegion}
 										aspectRatio={aspectRatio}
 										videoElement={videoPlaybackRef.current?.video || null}
-										exportQuality={exportQuality}
-										onExportQualityChange={setExportQuality}
-										exportFormat={exportFormat}
-										onExportFormatChange={setExportFormat}
-										gifFrameRate={gifFrameRate}
-										onGifFrameRateChange={setGifFrameRate}
-										gifLoop={gifLoop}
-										onGifLoopChange={setGifLoop}
-										gifSizePreset={gifSizePreset}
-										onGifSizePresetChange={setGifSizePreset}
-										gifOutputDimensions={calculateOutputDimensions(
-											videoPlaybackRef.current?.video?.videoWidth || 1920,
-											videoPlaybackRef.current?.video?.videoHeight || 1080,
-											gifSizePreset,
-											GIF_SIZE_PRESETS,
-										)}
-										onExport={handleOpenExportDialog}
 										selectedAnnotationId={selectedAnnotationId}
 										annotationRegions={annotationRegions}
 										onAnnotationContentChange={store.updateAnnotationContent}
@@ -958,6 +1012,7 @@ export default function VideoEditor() {
 										onAnnotationDelete={store.deleteAnnotationRegion}
 										onSaveProject={handleSaveProject}
 										onLoadProject={handleLoadProject}
+										onOpenExportPage={() => setActiveView("export")}
 										customImages={store.background.customImages}
 										onCustomImageAdd={store.addCustomImage}
 										onCustomImageRemove={store.removeCustomImage}
