@@ -87,4 +87,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	getPlatform: () => {
 		return ipcRenderer.invoke("get-platform");
 	},
+	minimizeWindow: () => {
+		return ipcRenderer.invoke("window-minimize");
+	},
+	toggleMaximizeWindow: () => {
+		return ipcRenderer.invoke("window-toggle-maximize");
+	},
+	closeWindow: () => {
+		return ipcRenderer.invoke("window-close");
+	},
+	isWindowMaximized: () => {
+		return ipcRenderer.invoke("window-is-maximized");
+	},
 });

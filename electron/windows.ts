@@ -73,18 +73,13 @@ export function createHudOverlayWindow(): BrowserWindow {
 }
 
 export function createEditorWindow(): BrowserWindow {
-	const isMac = process.platform === "darwin";
-
 	const win = new BrowserWindow({
 		width: 1200,
 		height: 800,
 		minWidth: 800,
 		minHeight: 600,
+		frame: false,
 		autoHideMenuBar: true,
-		...(isMac && {
-			titleBarStyle: "hiddenInset",
-			trafficLightPosition: { x: 12, y: 12 },
-		}),
 		transparent: false,
 		resizable: true,
 		alwaysOnTop: false,

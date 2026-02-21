@@ -1,4 +1,14 @@
-import { ArrowLeft, Copy, Export, FilmStrip, FloppyDisk, LinkSimple } from "@phosphor-icons/react";
+import {
+	ArrowLeft,
+	Copy,
+	Export,
+	FilmStrip,
+	FloppyDisk,
+	LinkSimple,
+	Minus,
+	Square,
+	X,
+} from "@phosphor-icons/react";
 import type React from "react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +30,10 @@ interface ExportPageProps {
 	onBack: () => void;
 	onSaveProject?: () => void;
 	onExport: () => void;
+	onMinimizeWindow?: () => void;
+	onToggleMaximizeWindow?: () => void;
+	onCloseWindow?: () => void;
+	isWindowMaximized?: boolean;
 	videoPlaybackRef: React.RefObject<VideoPlaybackRef>;
 	videoPath: string;
 	currentTime: number;
@@ -67,6 +81,10 @@ export function ExportPage({
 	onBack,
 	onSaveProject,
 	onExport,
+	onMinimizeWindow,
+	onToggleMaximizeWindow,
+	onCloseWindow,
+	isWindowMaximized,
 	videoPlaybackRef,
 	videoPath,
 	currentTime,
@@ -127,7 +145,10 @@ export function ExportPage({
 
 	return (
 		<div className="flex h-screen flex-col overflow-hidden bg-[#0a0d12] text-slate-100">
-			<div className="flex h-12 flex-shrink-0 items-center justify-between border-b border-white/5 px-4">
+			<div
+				className="flex h-12 flex-shrink-0 items-center justify-between border-b border-white/5 px-4"
+				style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+			>
 				<Button
 					type="button"
 					onClick={onBack}
@@ -138,7 +159,10 @@ export function ExportPage({
 					Back to Editor
 				</Button>
 				<span className="text-sm font-semibold">Export</span>
-				<div className="flex items-center gap-2">
+				<div
+					className="flex items-center gap-2"
+					style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+				>
 					<Button
 						type="button"
 						onClick={onSaveProject}
@@ -155,6 +179,33 @@ export function ExportPage({
 					>
 						<Export size={14} weight="bold" />
 						Export
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						onClick={onMinimizeWindow}
+						className="h-8 w-8 rounded-md border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white"
+					>
+						<Minus size={14} weight="bold" />
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						onClick={onToggleMaximizeWindow}
+						className="h-8 w-8 rounded-md border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white"
+					>
+						<Square size={12} weight={isWindowMaximized ? "fill" : "regular"} />
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						onClick={onCloseWindow}
+						className="h-8 w-8 rounded-md border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:text-red-200"
+					>
+						<X size={13} weight="bold" />
 					</Button>
 				</div>
 			</div>

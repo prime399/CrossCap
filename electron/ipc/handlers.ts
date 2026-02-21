@@ -65,6 +65,34 @@ export function registerIpcHandlers(
 	getSourceSelectorWindow: () => BrowserWindow | null,
 	onRecordingStateChange?: (recording: boolean, sourceName: string) => void,
 ) {
+	ipcMain.handle("window-minimize", (event) => {
+		const win = BrowserWindow.fromWebContents(event.sender);
+		win?.minimize();
+		return { success: true };
+	});
+
+	ipcMain.handle("window-toggle-maximize", (event) => {
+		const win = BrowserWindow.fromWebContents(event.sender);
+		if (!win) return { success: false, maximized: false };
+		if (win.isMaximized()) {
+			win.unmaximize();
+		} else {
+			win.maximize();
+		}
+		return { success: true, maximized: win.isMaximized() };
+	});
+
+	ipcMain.handle("window-close", (event) => {
+		const win = BrowserWindow.fromWebContents(event.sender);
+		win?.close();
+		return { success: true };
+	});
+
+	ipcMain.handle("window-is-maximized", (event) => {
+		const win = BrowserWindow.fromWebContents(event.sender);
+		return { success: true, maximized: win?.isMaximized() ?? false };
+	});
+
 	ipcMain.handle("get-sources", async (_, opts) => {
 		const sources = await desktopCapturer.getSources(opts);
 		return sources.map((source) => ({

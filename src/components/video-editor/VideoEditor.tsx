@@ -5,7 +5,10 @@ import {
 	Export,
 	FilmSlate,
 	FrameCorners,
+	Minus,
+	Square,
 	Timer,
+	X,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -83,6 +86,7 @@ export default function VideoEditor() {
 
 	const [showCropModal, setShowCropModal] = useState(false);
 	const [activeView, setActiveView] = useState<"editor" | "export">("editor");
+	const [isWindowMaximized, setIsWindowMaximized] = useState(false);
 
 	const wallpaper = useEditorStore((s) => s.background.value);
 	const shadowIntensity = useEditorStore((s) => s.effects.shadowIntensity);
@@ -447,6 +451,21 @@ export default function VideoEditor() {
 		};
 	}, [handleLoadProject, handleSaveProject, handleSaveProjectAs]);
 
+	useEffect(() => {
+		let mounted = true;
+		window.electronAPI
+			.isWindowMaximized()
+			.then((res) => {
+				if (mounted) setIsWindowMaximized(Boolean(res?.maximized));
+			})
+			.catch((_error) => {
+				// no-op
+			});
+		return () => {
+			mounted = false;
+		};
+	}, []);
+
 	function togglePlayPause() {
 		const playback = videoPlaybackRef.current;
 		const video = playback?.video;
@@ -732,6 +751,27 @@ export default function VideoEditor() {
 		}
 	}, [store]);
 
+	const handleWindowMinimize = useCallback(() => {
+		window.electronAPI.minimizeWindow().catch((_error) => {
+			// no-op
+		});
+	}, []);
+
+	const handleWindowToggleMaximize = useCallback(async () => {
+		try {
+			const result = await window.electronAPI.toggleMaximizeWindow();
+			setIsWindowMaximized(Boolean(result?.maximized));
+		} catch {
+			// no-op
+		}
+	}, []);
+
+	const handleWindowClose = useCallback(() => {
+		window.electronAPI.closeWindow().catch((_error) => {
+			// no-op
+		});
+	}, []);
+
 	const projectName = currentProjectPath
 		? currentProjectPath.split(/[\\/]/).pop()
 		: videoSourcePath?.split(/[\\/]/).pop() || "Untitled recording";
@@ -776,6 +816,10 @@ export default function VideoEditor() {
 					onBack={() => setActiveView("editor")}
 					onSaveProject={handleSaveProject}
 					onExport={handleOpenExportDialog}
+					onMinimizeWindow={handleWindowMinimize}
+					onToggleMaximizeWindow={handleWindowToggleMaximize}
+					onCloseWindow={handleWindowClose}
+					isWindowMaximized={isWindowMaximized}
 					videoPlaybackRef={videoPlaybackRef}
 					videoPath={videoPath || ""}
 					currentTime={currentTime}
@@ -864,6 +908,33 @@ export default function VideoEditor() {
 					>
 						<Export size={13} weight="bold" />
 						Export
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						onClick={handleWindowMinimize}
+						className="h-8 w-8 rounded-md border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white"
+					>
+						<Minus size={14} weight="bold" />
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						onClick={handleWindowToggleMaximize}
+						className="h-8 w-8 rounded-md border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white"
+					>
+						<Square size={12} weight={isWindowMaximized ? "fill" : "regular"} />
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						onClick={handleWindowClose}
+						className="h-8 w-8 rounded-md border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:text-red-200"
+					>
+						<X size={13} weight="bold" />
 					</Button>
 				</div>
 			</div>

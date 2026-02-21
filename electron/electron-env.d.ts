@@ -106,5 +106,9 @@ interface Window {
 		onMenuSaveProject: (callback: () => void) => () => void;
 		onMenuSaveProjectAs: (callback: () => void) => () => void;
 		getPlatform: () => Promise<string>;
+		minimizeWindow: () => Promise<{ success: boolean }>;
+		toggleMaximizeWindow: () => Promise<{ success: boolean; maximized: boolean }>;
+		closeWindow: () => Promise<{ success: boolean }>;
+		isWindowMaximized: () => Promise<{ success: boolean; maximized: boolean }>;
 	};
 }
