@@ -336,6 +336,20 @@ export class StreamingVideoDecoder {
 		return this.metadata.duration - trimmed;
 	}
 
+	/**
+	 * Compute total export frame count by summing per-segment counts.
+	 * This matches the actual frame delivery in deliverSegment() and avoids
+	 * floating-point drift from computing ceil(totalDuration * fps).
+	 */
+	getEffectiveFrameCount(trimRegions: TrimRegion[] | undefined, targetFrameRate: number): number {
+		if (!this.metadata) throw new Error("Must call loadMetadata() first");
+		const segments = this.computeSegments(this.metadata.duration, trimRegions);
+		return segments.reduce(
+			(sum, seg) => sum + Math.ceil((seg.endSec - seg.startSec) * targetFrameRate),
+			0,
+		);
+	}
+
 	cancel(): void {
 		this.cancelled = true;
 	}

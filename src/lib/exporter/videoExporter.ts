@@ -124,7 +124,10 @@ export class VideoExporter {
 
 			// Calculate effective duration and frame count (excluding trim regions)
 			const effectiveDuration = this.streamingDecoder.getEffectiveDuration(this.config.trimRegions);
-			const totalFrames = Math.ceil(effectiveDuration * this.config.frameRate);
+			const totalFrames = this.streamingDecoder.getEffectiveFrameCount(
+				this.config.trimRegions,
+				this.config.frameRate,
+			);
 
 			console.log("[VideoExporter] Original duration:", videoInfo.duration, "s");
 			console.log("[VideoExporter] Effective duration:", effectiveDuration, "s");
