@@ -1,20 +1,20 @@
-import Block from "@uiw/react-color-block";
 import {
 	Bug,
+	Cursor,
 	DownloadSimple,
 	FilmStrip,
+	FloppyDisk,
 	FolderOpen,
 	Image,
-	Cursor,
-	Palette,
 	MagnifyingGlass,
-	FloppyDisk,
+	Palette,
 	Sparkle,
 	Star,
 	Trash,
 	UploadSimple,
 	X,
 } from "@phosphor-icons/react";
+import Block from "@uiw/react-color-block";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,14 @@ import { AnnotationSettingsPanel } from "./AnnotationSettingsPanel";
 import { CropControl } from "./CropControl";
 import { CursorSettingsPanel } from "./CursorSettingsPanel";
 import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
-import type { AnnotationRegion, AnnotationType, CropRegion, FigureData, ZoomDepth } from "./types";
+import {
+	type AnnotationRegion,
+	type AnnotationType,
+	type CropRegion,
+	DEFAULT_CROP_REGION,
+	type FigureData,
+	type ZoomDepth,
+} from "./types";
 
 interface SettingsPanelProps {
 	selected: string;
@@ -391,7 +398,6 @@ export function SettingsPanel({
 								className="w-full [&_[role=slider]]:bg-cc-accent [&_[role=slider]]:border-cc-accent [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
 							/>
 						</div>
-
 					</TabsContent>
 
 					<TabsContent value="background" className="mt-0">
@@ -634,12 +640,12 @@ export function SettingsPanel({
 						className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 animate-in fade-in duration-200"
 						onClick={() => onShowCropModal?.(false)}
 					/>
-					<div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[60] bg-cc-surface-0 rounded-2xl shadow-2xl border border-white/10 p-8 w-[90vw] max-w-5xl max-h-[90vh] overflow-auto animate-in zoom-in-95 duration-200">
-						<div className="flex items-center justify-between mb-6">
+					<div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[60] bg-[#0b0d12] rounded-2xl shadow-2xl border border-white/10 p-6 w-[92vw] max-w-6xl max-h-[92vh] overflow-auto animate-in zoom-in-95 duration-200">
+						<div className="flex items-center justify-between mb-3">
 							<div>
 								<span className="text-xl font-bold text-slate-200">Crop Video</span>
-								<p className="text-sm text-slate-400 mt-2">
-									Drag on each side to adjust the crop area
+								<p className="text-sm text-slate-400 mt-1">
+									Drag edges, corners, or the center box to reframe your shot
 								</p>
 							</div>
 							<Button
@@ -656,14 +662,15 @@ export function SettingsPanel({
 							cropRegion={cropRegion}
 							onCropChange={onCropChange}
 							aspectRatio={aspectRatio}
+							onReset={() => onCropChange(DEFAULT_CROP_REGION)}
 						/>
-						<div className="mt-6 flex justify-end">
+						<div className="mt-5 flex justify-center">
 							<Button
 								onClick={() => onShowCropModal?.(false)}
-								size="lg"
-								className="bg-cc-accent hover:bg-cc-accent/90 text-white"
+								size="sm"
+								className="bg-white text-black hover:bg-slate-200 rounded-full px-6"
 							>
-								Done
+								Save
 							</Button>
 						</div>
 					</div>
