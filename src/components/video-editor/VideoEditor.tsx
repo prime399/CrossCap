@@ -1,4 +1,12 @@
-import { CaretDown, Check, Crop, FilmSlate, FrameCorners, Timer } from "@phosphor-icons/react";
+import {
+	CaretDown,
+	Check,
+	Crop,
+	Export,
+	FilmSlate,
+	FrameCorners,
+	Timer,
+} from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { toast } from "sonner";
@@ -820,11 +828,22 @@ export default function VideoEditor() {
 						<p className="max-w-[320px] truncate text-[10px] text-slate-500">{projectName}</p>
 					</div>
 				</div>
-				<div className="flex items-center gap-2 text-[10px] text-slate-400">
+				<div
+					className="flex items-center gap-2 text-[10px] text-slate-400"
+					style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+				>
 					<span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1">
 						<Timer size={11} weight="duotone" />
 						{Math.max(0, duration).toFixed(1)}s
 					</span>
+					<Button
+						type="button"
+						onClick={() => setActiveView("export")}
+						className="h-8 gap-1.5 rounded-full bg-cc-accent px-3 text-xs font-semibold text-white hover:bg-cc-accent/90"
+					>
+						<Export size={13} weight="bold" />
+						Export
+					</Button>
 				</div>
 			</div>
 

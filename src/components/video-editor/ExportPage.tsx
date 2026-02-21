@@ -138,15 +138,25 @@ export function ExportPage({
 					Back to Editor
 				</Button>
 				<span className="text-sm font-semibold">Export</span>
-				<Button
-					type="button"
-					onClick={onSaveProject}
-					variant="ghost"
-					className="h-8 rounded-md border border-white/10 bg-white/[0.03] px-3 text-xs text-slate-300 hover:bg-white/10"
-				>
-					<FloppyDisk size={14} />
-					Save
-				</Button>
+				<div className="flex items-center gap-2">
+					<Button
+						type="button"
+						onClick={onSaveProject}
+						variant="ghost"
+						className="h-8 rounded-md border border-white/10 bg-white/[0.03] px-3 text-xs text-slate-300 hover:bg-white/10"
+					>
+						<FloppyDisk size={14} />
+						Save
+					</Button>
+					<Button
+						type="button"
+						onClick={onExport}
+						className="h-8 rounded-full bg-[#2f6feb] px-4 text-xs font-semibold text-white hover:bg-[#3b82f6]"
+					>
+						<Export size={14} weight="bold" />
+						Export
+					</Button>
+				</div>
 			</div>
 
 			<div className="flex min-h-0 flex-1">

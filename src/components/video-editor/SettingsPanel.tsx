@@ -1,7 +1,5 @@
 import {
-	Bug,
 	Cursor,
-	DotsThree,
 	Export,
 	FloppyDisk,
 	FolderOpen,
@@ -9,7 +7,6 @@ import {
 	MagnifyingGlass,
 	Palette,
 	Sparkle,
-	Star,
 	Trash,
 	UploadSimple,
 	X,
@@ -19,13 +16,6 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -340,58 +330,39 @@ export function SettingsPanel({
 						</TabsList>
 					</div>
 
-					<div className="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
+					<div className="mb-3 flex items-center justify-between gap-2 border-b border-white/10 pb-2">
 						<p className="text-sm font-semibold text-slate-100">{activeTabLabel}</p>
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon"
-									className="h-7 w-7 rounded-md border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/10 hover:text-white"
-								>
-									<DotsThree size={16} weight="bold" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="end"
-								className="w-48 border-white/10 bg-cc-popover text-slate-200"
+						<div className="flex items-center gap-1.5">
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								onClick={onLoadProject}
+								className="h-7 gap-1 rounded-md border-white/10 bg-white/[0.03] px-2 text-[10px] text-slate-300 hover:bg-white/10 hover:text-white"
 							>
-								<DropdownMenuItem onClick={onLoadProject} className="cursor-pointer text-xs">
-									<FolderOpen size={14} />
-									Load Project
-								</DropdownMenuItem>
-								<DropdownMenuItem onClick={onSaveProject} className="cursor-pointer text-xs">
-									<FloppyDisk size={14} />
-									Save Project
-								</DropdownMenuItem>
-								<DropdownMenuItem onClick={onOpenExportPage} className="cursor-pointer text-xs">
-									<Export size={14} />
-									Open Export Page
-								</DropdownMenuItem>
-								<DropdownMenuSeparator className="bg-white/10" />
-								<DropdownMenuItem
-									onClick={() =>
-										window.electronAPI?.openExternalUrl(
-											"https://github.com/prime399/CrossCap/issues/new/choose",
-										)
-									}
-									className="cursor-pointer text-xs"
-								>
-									<Bug size={14} />
-									Report Bug
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={() =>
-										window.electronAPI?.openExternalUrl("https://github.com/prime399/CrossCap")
-									}
-									className="cursor-pointer text-xs"
-								>
-									<Star size={14} weight="fill" className="text-yellow-400" />
-									Star on GitHub
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
+								<FolderOpen size={12} />
+								Load
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								onClick={onSaveProject}
+								className="h-7 gap-1 rounded-md border-white/10 bg-white/[0.03] px-2 text-[10px] text-slate-300 hover:bg-white/10 hover:text-white"
+							>
+								<FloppyDisk size={12} />
+								Save
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								onClick={onOpenExportPage}
+								className="h-7 gap-1 rounded-md bg-cc-accent px-2 text-[10px] font-semibold text-white hover:bg-cc-accent/90"
+							>
+								<Export size={12} />
+								Export
+							</Button>
+						</div>
 					</div>
 
 					<TabsContent
