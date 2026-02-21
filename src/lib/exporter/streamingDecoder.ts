@@ -125,10 +125,25 @@ export class StreamingVideoDecoder {
 
 		const getNextFrame = (): Promise<VideoFrame | null> => {
 			if (decodeError) throw decodeError;
+			if (this.cancelled) return Promise.resolve(null);
 			if (pendingFrames.length > 0) return Promise.resolve(pendingFrames.shift()!);
 			if (decodeDone) return Promise.resolve(null);
 			return new Promise((resolve) => {
 				frameResolve = resolve;
+				// Poll for cancellation so we don't deadlock when the encoder stalls
+				const cancelCheck = setInterval(() => {
+					if (this.cancelled && frameResolve === resolve) {
+						frameResolve = null;
+						clearInterval(cancelCheck);
+						resolve(null);
+					}
+				}, 100);
+				// Clear interval once the promise settles normally
+				const origResolve = resolve;
+				frameResolve = (frame) => {
+					clearInterval(cancelCheck);
+					origResolve(frame);
+				};
 			});
 		};
 
@@ -340,8 +355,9 @@ export class StreamingVideoDecoder {
 		if (this.demuxer) {
 			try {
 				this.demuxer.destroy();
-			} catch {}
-			this.demuxer = null;
+			} catch {
+				/* demuxer already destroyed */
+			}
 		}
 	}
 }
