@@ -154,6 +154,7 @@ export function ExportPage({
 					onClick={onBack}
 					variant="ghost"
 					className="h-8 rounded-full border border-white/10 bg-white/[0.03] px-3 text-xs text-slate-200 hover:bg-white/10"
+					style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
 				>
 					<ArrowLeft size={14} weight="bold" />
 					Back to Editor
