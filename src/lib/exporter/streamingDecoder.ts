@@ -128,21 +128,24 @@ export class StreamingVideoDecoder {
 			if (this.cancelled) return Promise.resolve(null);
 			if (pendingFrames.length > 0) return Promise.resolve(pendingFrames.shift()!);
 			if (decodeDone) return Promise.resolve(null);
-			return new Promise((resolve) => {
-				frameResolve = resolve;
-				// Poll for cancellation so we don't deadlock when the encoder stalls
+			return new Promise((resolve, reject) => {
 				const cancelCheck = setInterval(() => {
-					if (this.cancelled && frameResolve === resolve) {
-						frameResolve = null;
+					if (decodeError) {
 						clearInterval(cancelCheck);
+						frameResolve = null;
+						reject(decodeError);
+						return;
+					}
+					if (this.cancelled) {
+						clearInterval(cancelCheck);
+						frameResolve = null;
 						resolve(null);
 					}
 				}, 100);
-				// Clear interval once the promise settles normally
-				const origResolve = resolve;
+				// Wrap resolve to clear the interval when settled normally
 				frameResolve = (frame) => {
 					clearInterval(cancelCheck);
-					origResolve(frame);
+					resolve(frame);
 				};
 			});
 		};
@@ -200,16 +203,22 @@ export class StreamingVideoDecoder {
 
 			// Past current segment — flush buffer and advance
 			if (frameTimeSec >= currentSegment.endSec - 0.001) {
-				exportFrameIndex = await this.deliverSegment(
-					segmentBuffer,
-					currentSegment,
-					targetFrameRate,
-					frameDurationUs,
-					exportFrameIndex,
-					onFrame,
-				);
-				for (const f of segmentBuffer) f.close();
-				segmentBuffer = [];
+				try {
+					exportFrameIndex = await this.deliverSegment(
+						segmentBuffer,
+						currentSegment,
+						targetFrameRate,
+						frameDurationUs,
+						exportFrameIndex,
+						onFrame,
+					);
+				} catch (err) {
+					frame.close();
+					throw err;
+				} finally {
+					for (const f of segmentBuffer) f.close();
+					segmentBuffer = [];
+				}
 
 				segmentIdx++;
 				while (
@@ -232,15 +241,18 @@ export class StreamingVideoDecoder {
 
 		// Flush last segment
 		if (segmentBuffer.length > 0 && segmentIdx < segments.length) {
-			exportFrameIndex = await this.deliverSegment(
-				segmentBuffer,
-				segments[segmentIdx],
-				targetFrameRate,
-				frameDurationUs,
-				exportFrameIndex,
-				onFrame,
-			);
-			for (const f of segmentBuffer) f.close();
+			try {
+				exportFrameIndex = await this.deliverSegment(
+					segmentBuffer,
+					segments[segmentIdx],
+					targetFrameRate,
+					frameDurationUs,
+					exportFrameIndex,
+					onFrame,
+				);
+			} finally {
+				for (const f of segmentBuffer) f.close();
+			}
 		}
 
 		// Drain leftover decoded frames
@@ -295,7 +307,12 @@ export class StreamingVideoDecoder {
 			);
 			const sourceFrame = frames[sourceIdx];
 			const clone = new VideoFrame(sourceFrame, { timestamp: sourceFrame.timestamp });
-			await onFrame(clone, exportFrameIndex * frameDurationUs, sourceFrame.timestamp / 1000);
+			try {
+				await onFrame(clone, exportFrameIndex * frameDurationUs, sourceFrame.timestamp / 1000);
+			} catch (err) {
+				clone.close();
+				throw err;
+			}
 			exportFrameIndex++;
 		}
 

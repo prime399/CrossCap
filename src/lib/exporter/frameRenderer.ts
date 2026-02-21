@@ -60,6 +60,24 @@ function hexToRgba(hexColor: string, opacity: number): string {
 	return `rgba(${r},${g},${b},${opacity})`;
 }
 
+function splitGradientParams(input: string): string[] {
+	const parts: string[] = [];
+	let depth = 0;
+	let current = "";
+	for (const ch of input) {
+		if (ch === "(") depth++;
+		else if (ch === ")") depth--;
+		if (ch === "," && depth === 0) {
+			parts.push(current.trim());
+			current = "";
+		} else {
+			current += ch;
+		}
+	}
+	if (current.trim()) parts.push(current.trim());
+	return parts;
+}
+
 // Renders video frames with all effects (background, zoom, crop, blur, shadow) to an offscreen canvas for export.
 
 export class FrameRenderer {
@@ -194,8 +212,15 @@ export class FrameRenderer {
 				}
 
 				await new Promise<void>((resolve, reject) => {
-					img.onload = () => resolve();
+					const timeout = setTimeout(() => {
+						reject(new Error(`Background image load timed out: ${imageUrl}`));
+					}, 10_000);
+					img.onload = () => {
+						clearTimeout(timeout);
+						resolve();
+					};
 					img.onerror = (err) => {
+						clearTimeout(timeout);
 						console.error("[FrameRenderer] Failed to load background image:", imageUrl, err);
 						reject(new Error(`Failed to load background image: ${imageUrl}`));
 					};
@@ -231,22 +256,48 @@ export class FrameRenderer {
 				const gradientMatch = wallpaper.match(/(linear|radial)-gradient\((.+)\)/);
 				if (gradientMatch) {
 					const [, type, params] = gradientMatch;
-					const parts = params.split(",").map((s) => s.trim());
+					const parts = splitGradientParams(params);
 
 					let gradient: CanvasGradient;
 
 					if (type === "linear") {
-						gradient = bgCtx.createLinearGradient(0, 0, 0, this.config.height);
-						parts.forEach((part, index) => {
-							if (part.startsWith("to ") || part.includes("deg")) return;
-
+						let x0 = 0;
+						let y0 = 0;
+						let x1 = 0;
+						let y1 = this.config.height;
+						const firstPart = parts[0];
+						if (firstPart) {
+							const degMatch = firstPart.match(/(\d+(?:\.\d+)?)deg/);
+							if (degMatch) {
+								const angle = (Number.parseFloat(degMatch[1]) - 90) * (Math.PI / 180);
+								const len = Math.max(this.config.width, this.config.height);
+								x0 = this.config.width / 2 - (Math.cos(angle) * len) / 2;
+								y0 = this.config.height / 2 - (Math.sin(angle) * len) / 2;
+								x1 = this.config.width / 2 + (Math.cos(angle) * len) / 2;
+								y1 = this.config.height / 2 + (Math.sin(angle) * len) / 2;
+							} else if (firstPart.startsWith("to ")) {
+								const dir = firstPart.replace("to ", "").trim();
+								if (dir.includes("right")) {
+									x1 = this.config.width;
+									y1 = 0;
+								} else if (dir.includes("left")) {
+									x0 = this.config.width;
+									y1 = 0;
+								} else if (dir.includes("top")) {
+									y0 = this.config.height;
+									y1 = 0;
+								}
+							}
+						}
+						gradient = bgCtx.createLinearGradient(x0, y0, x1, y1);
+						const colorParts = parts.filter((p) => !p.startsWith("to ") && !p.includes("deg"));
+						for (const [colorIndex, part] of colorParts.entries()) {
 							const colorMatch = part.match(/^(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|[a-z]+)/);
 							if (colorMatch) {
-								const color = colorMatch[1];
-								const position = index / (parts.length - 1);
-								gradient.addColorStop(position, color);
+								const position = colorParts.length > 1 ? colorIndex / (colorParts.length - 1) : 0;
+								gradient.addColorStop(position, colorMatch[1]);
 							}
-						});
+						}
 					} else {
 						const cx = this.config.width / 2;
 						const cy = this.config.height / 2;

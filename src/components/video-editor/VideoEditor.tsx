@@ -1250,7 +1250,7 @@ export default function VideoEditor() {
 
 			<ExportDialog
 				isOpen={showExportDialog}
-				onClose={() => store.setShowExportDialog(false)}
+				onClose={handleCloseExportDialog}
 				progress={exportProgress}
 				isExporting={isExporting}
 				error={exportError}

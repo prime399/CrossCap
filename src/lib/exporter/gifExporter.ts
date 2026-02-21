@@ -219,6 +219,14 @@ export class GifExporter {
 					resolve(blob);
 				});
 
+				// @ts-expect-error - gif.js emits "error" but types don't declare it
+				this.gif!.on("error", (err: Error) => {
+					if (settled) return;
+					settled = true;
+					clearInterval(stallTimer);
+					reject(err instanceof Error ? err : new Error(String(err)));
+				});
+
 				// Track rendering progress
 				this.gif!.on("progress", (progress: number) => {
 					lastProgressTime = performance.now();
@@ -265,7 +273,8 @@ export class GifExporter {
 		if (this.gif) {
 			this.gif.abort();
 		}
-		this.cleanup();
+		// Don't call cleanup() here — let export()'s finally block handle it.
+		// Calling cleanup() while decodeAll/render is pending causes races.
 	}
 
 	private cleanup(): void {

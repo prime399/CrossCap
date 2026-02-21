@@ -63,6 +63,8 @@ export class VideoExporter {
 	private videoChunkCount = 0;
 	private audioChunkCount = 0;
 	private lastEncoderOutputTime = 0;
+	private lastAudioEncoderOutputTime = 0;
+	private encoderError: Error | null = null;
 
 	constructor(config: VideoExporterConfig) {
 		this.config = config;
@@ -194,7 +196,8 @@ export class VideoExporter {
 						this.encodeQueue++;
 						this.encoder.encode(exportFrame, { keyFrame: frameIndex % 150 === 0 });
 					} else {
-						console.warn(`[Frame ${frameIndex}] Encoder not ready! State: ${this.encoder?.state}`);
+						exportFrame.close();
+						throw new Error(`Encoder not ready (state: ${this.encoder?.state ?? "null"})`);
 					}
 
 					exportFrame.close();
@@ -223,7 +226,9 @@ export class VideoExporter {
 			);
 
 			if (this.cancelled) {
-				return { success: false, error: "Export cancelled" };
+				const errorMsg =
+					this.encoderError?.message || this.muxingError?.message || "Export cancelled";
+				return { success: false, error: errorMsg };
 			}
 
 			// --- Finalizing phase: flush encoder, encode audio, mux ---
@@ -246,10 +251,14 @@ export class VideoExporter {
 
 			reportFinalizing("Flushing video encoder", 20);
 			if (this.encoder && this.encoder.state === "configured") {
+				let flushTimer: ReturnType<typeof setTimeout> | undefined;
 				await Promise.race([
-					this.encoder.flush(),
+					this.encoder.flush().then((v) => {
+						clearTimeout(flushTimer);
+						return v;
+					}),
 					new Promise<never>((_, reject) => {
-						setTimeout(
+						flushTimer = setTimeout(
 							() => reject(new Error("Video encoder flush timed out")),
 							this.ENCODER_STALL_TIMEOUT_MS,
 						);
@@ -304,7 +313,9 @@ export class VideoExporter {
 		this.muxingError = null;
 		this.videoChunkCount = 0;
 		this.audioChunkCount = 0;
-		this.lastEncoderOutputTime = performance.now();
+		this.lastEncoderOutputTime = 0;
+		this.lastAudioEncoderOutputTime = 0;
+		this.encoderError = null;
 		let videoDescription: Uint8Array | undefined;
 
 		this.encoder = new VideoEncoder({
@@ -373,6 +384,9 @@ export class VideoExporter {
 			},
 			error: (error) => {
 				console.error("[VideoExporter] Encoder error:", error);
+				if (!this.encoderError) {
+					this.encoderError = error instanceof Error ? error : new Error(String(error));
+				}
 				this.cancelled = true;
 			},
 		});
@@ -385,7 +399,7 @@ export class VideoExporter {
 			height: this.config.height,
 			bitrate: this.config.bitrate,
 			framerate: this.config.frameRate,
-			latencyMode: "realtime",
+			latencyMode: "quality",
 			bitrateMode: "variable",
 			hardwareAcceleration: "prefer-hardware",
 		};
@@ -425,7 +439,9 @@ export class VideoExporter {
 		const current = this.muxingPromises;
 		this.muxingPromises = [];
 		// Re-add as a single combined promise so we don't lose track
-		const combined = Promise.all(current).then(() => undefined);
+		const combined = Promise.all(current)
+			.then(() => undefined)
+			.catch(() => undefined);
 		this.muxingPromises.push(combined);
 	}
 
@@ -480,6 +496,8 @@ export class VideoExporter {
 		this.videoDescription = undefined;
 		this.videoColorSpace = undefined;
 		this.lastEncoderOutputTime = 0;
+		this.lastAudioEncoderOutputTime = 0;
+		this.encoderError = null;
 	}
 
 	private computeKeptSegments(
@@ -610,6 +628,7 @@ export class VideoExporter {
 
 		this.audioEncoder = new AudioEncoder({
 			output: (chunk, meta) => {
+				this.lastAudioEncoderOutputTime = performance.now();
 				const isFirstChunk = this.audioChunkCount === 0;
 				this.audioChunkCount++;
 
@@ -640,6 +659,9 @@ export class VideoExporter {
 			},
 			error: (error) => {
 				console.error("[VideoExporter] Audio encoder error:", error);
+				if (!this.encoderError) {
+					this.encoderError = error instanceof Error ? error : new Error(String(error));
+				}
 				this.cancelled = true;
 			},
 		});
@@ -649,8 +671,20 @@ export class VideoExporter {
 		const channels = track.numberOfChannels;
 
 		for (let offset = 0; offset < track.numberOfFrames && !this.cancelled; offset += frameSize) {
+			const audioQueueWaitStart = performance.now();
 			while (this.audioEncodeQueue >= this.MAX_AUDIO_ENCODE_QUEUE && !this.cancelled) {
-				await new Promise((resolve) => setTimeout(resolve, 0));
+				await new Promise((resolve) => setTimeout(resolve, 5));
+				if (this.lastAudioEncoderOutputTime > 0) {
+					const elapsed = performance.now() - this.lastAudioEncoderOutputTime;
+					if (elapsed > this.ENCODER_STALL_TIMEOUT_MS) {
+						this.cancelled = true;
+						throw new Error("Audio encoder stalled — no output received");
+					}
+				}
+				if (performance.now() - audioQueueWaitStart > this.ENCODER_STALL_TIMEOUT_MS * 2) {
+					this.cancelled = true;
+					throw new Error("Audio encoder queue timeout exceeded");
+				}
 			}
 
 			const numberOfFrames = Math.min(frameSize, track.numberOfFrames - offset);
@@ -678,7 +712,15 @@ export class VideoExporter {
 		}
 
 		if (this.audioEncoder.state === "configured") {
-			await this.audioEncoder.flush();
+			await Promise.race([
+				this.audioEncoder.flush(),
+				new Promise<never>((_, reject) => {
+					setTimeout(
+						() => reject(new Error("Audio encoder flush timed out")),
+						this.ENCODER_STALL_TIMEOUT_MS,
+					);
+				}),
+			]);
 			this.audioEncoder.close();
 			this.audioEncoder = null;
 		}
