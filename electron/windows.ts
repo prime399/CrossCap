@@ -80,6 +80,7 @@ export function createEditorWindow(): BrowserWindow {
 		height: 800,
 		minWidth: 800,
 		minHeight: 600,
+		autoHideMenuBar: true,
 		...(isMac && {
 			titleBarStyle: "hiddenInset",
 			trafficLightPosition: { x: 12, y: 12 },
@@ -101,6 +102,7 @@ export function createEditorWindow(): BrowserWindow {
 
 	// Maximize the window by default
 	win.maximize();
+	win.setMenuBarVisibility(false);
 
 	win.webContents.on("did-finish-load", () => {
 		win?.webContents.send("main-process-message", new Date().toLocaleString());
