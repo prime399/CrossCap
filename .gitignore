@@ -30,3 +30,5 @@ CLAUDE.md
 AGENTS.md
 # npx electron-builder --mac --win
 screenshots/
+dev_article.md
+old_dev_article.md
